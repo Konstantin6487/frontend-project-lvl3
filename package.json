@@ -1,0 +1,20 @@
+{
+  "name": "frontend-project-lvl3",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Konstantin6487/frontend-project-lvl3.git"
+  },
+  "keywords": [],
+  "author": "Konstantin Bochinin <Konstantin6487@rambler.ru>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Konstantin6487/frontend-project-lvl3/issues"
+  },
+  "homepage": "https://github.com/Konstantin6487/frontend-project-lvl3#readme"
+}
