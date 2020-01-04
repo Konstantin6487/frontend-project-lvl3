@@ -4,6 +4,8 @@
 [![Build Status](https://travis-ci.com/Konstantin6487/frontend-project-lvl3.svg?branch=master)](https://travis-ci.com/Konstantin6487/frontend-project-lvl3)
 [![Issue Count](https://codeclimate.com/github/hexlet-boilerplates/webpack-package/badges/issue_count.svg)](https://codeclimate.com/github/Konstantin6487/frontend-project-lvl3)
 
+[Watch online](https://clumsy-power.surge.sh)
+
 ## Setup
 
 ```sh
