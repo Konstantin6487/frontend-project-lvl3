@@ -1,23 +1,171 @@
+import { isEmpty, head, get, uniqueId, last } from 'lodash-es';
+import { watch } from 'melanke-watchjs';
+import { isURL } from 'validator';
+import BaseLayout from './BaseLayout';
+import httpClient from './configHttpClient';
 import '../scss/app.scss';
 
 export default () => {
-  const div = document.createElement('div');
-  div.innerHTML = `<main role="main">
-  <div class="jumbotron jumbotron-fluid">
-    <div class="container">
-      <h1>Form example</h1>
-      <p class="lead">This example is a quick exercise to illustrate how the top-aligned navbar works. As you scroll, this navbar remains in its original position and moves with the rest of the page.</p>
-      <form>
-        <label for="input1">Поле ввода</label>
-        <div class="input-group">
-          <input type="text" class="form-control form-control-lg" id="input1" aria-describedby="emailHelp">
-          <div class="input-group-append">
-            <button class="btn btn-primary" type="submit" id="button-submit">Кнопка</button>
-          </div>
-        </div>
-      </form>
-    </div>
-    </div>
-  </main>`;
-  document.body.appendChild(div);
+  const state = {
+    addingChannelProcess: {
+      errors: [],
+      state: 'idle', // idle | editing | processing | successed
+      validationState: 'idle', // idle | invalid | valid
+    },
+    channels: [],
+    items: [],
+  };
+
+  const root = document.getElementById('root');
+  const layout = new BaseLayout(root);
+  layout.init();
+
+  const [form] = document.getElementsByTagName('form');
+
+  watch(state, 'channels', () => {
+    const ul = document.getElementsByClassName('nav-tabs')[0];
+    ul.innerHTML = '';
+    state.channels.forEach((channel) => {
+      const li = document.createElement('li');
+      li.classList.add('nav-item', 'pl-3');
+      li.innerHTML = `<a href="#" class="nav-link font-weight-bold text-light shadow-lg border-0">#${channel.title}</a>`;
+      ul.appendChild(li);
+    });
+  });
+
+  watch(state, 'addingChannelProcess', (prop, _, value) => {
+    console.log(`${prop}: ${value}`);
+    const input = document.getElementById('feedUrl');
+    const btn = form.querySelector('#button-submit');
+    if (state.addingChannelProcess.state === 'successed') {
+      input.value = '';
+      btn.innerHTML = '';
+      btn.textContent = 'Sync';
+      return;
+    }
+    if (state.addingChannelProcess.state === 'processing') {
+      btn.setAttribute('disabled', '');
+      btn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+      Loading...`;
+    }
+  }, 1);
+
+  watch(state, 'addingChannelProcess', () => {
+    const btn = form.querySelector('#button-submit');
+    const input = form.querySelector('#feedUrl');
+    const feedback = form.querySelector('.feedback');
+    if (state.addingChannelProcess.validationState === 'invalid') {
+      feedback.className = 'feedback invalid-feedback';
+      feedback.textContent = 'invalid';
+      feedback.textContent = last(state.addingChannelProcess.errors);
+      input.classList.remove('is-valid');
+      input.classList.add('is-invalid');
+      btn.setAttribute('disabled', '');
+      return;
+    }
+    if (state.addingChannelProcess.validationState === 'valid') {
+      feedback.className = 'feedback is-valid';
+      feedback.textContent = '';
+      input.classList.remove('is-invalid');
+      input.classList.add('is-valid');
+      btn.removeAttribute('disabled');
+      return;
+    }
+    feedback.className = 'feedback';
+    feedback.innerHTML = '';
+    input.classList.remove('is-valid', 'is-invalid');
+    btn.setAttribute('disabled', '');
+  }, 1);
+
+  watch(state, 'items', () => {
+    const itemsContainer = document.querySelector('section > ul');
+    itemsContainer.innerHTML = '';
+    state.items.forEach((item) => {
+      const li = document.createElement('li');
+      li.classList.add('list-group-item', 'mb-2');
+      li.innerHTML = `<a href=${item.link} target="_blank">${item.title}</a>`;
+      itemsContainer.appendChild(li);
+    });
+  });
+
+  const input = document.getElementById('feedUrl');
+
+  input.addEventListener('focus', (e) => {
+    e.target.select();
+  });
+
+  input.addEventListener('input', (e) => {
+    const { target: { value } } = e;
+    if (isEmpty(value)) {
+      state.addingChannelProcess.validationState = 'idle';
+      return;
+    }
+    if (!isURL(value, { require_protocol: true })) {
+      state.addingChannelProcess.validationState = 'invalid';
+      state.addingChannelProcess.errors = [...state.addingChannelProcess.errors, 'Invalid URL'];
+      return;
+    }
+    if (state.channels.some((channel) => channel.link === value)) {
+      state.addingChannelProcess.validationState = 'invalid';
+      state.addingChannelProcess.errors = [...state.addingChannelProcess.errors, 'This channel is already exists'];
+      return;
+    }
+    state.addingChannelProcess.validationState = 'valid';
+  });
+
+  input.addEventListener('input', (e) => {
+    const { target: { value } } = e;
+    if (isEmpty(value)) {
+      state.addingChannelProcess.state = 'idle';
+      return;
+    }
+    if (!isEmpty(value)) {
+      state.addingChannelProcess.state = 'editing';
+    }
+  });
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (state.addingChannelProcess.validationState !== 'valid') {
+      return;
+    }
+    state.addingChannelProcess.state = 'processing';
+    state.addingChannelProcess.validationState = 'idle';
+
+    const formData = new FormData(e.target);
+    const feedURL = formData.get('feed-url');
+    httpClient.get(feedURL).then((response) => {
+      state.addingChannelProcess.state = 'successed';
+
+      const contentTypeHeader = get(response, ['headers', 'content-type']);
+      const contentType = head(contentTypeHeader.split(';'));
+      console.log(contentType);
+      // state.channels = [...state.channels, { url: feedURL }];
+      // console.log(state);
+      // console.log(data);
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(response.data, contentType === 'application/rss+xml' ? 'application/xml' : contentType);
+      const title = doc
+        .querySelector('channel > title')
+        .textContent;
+      const description = doc
+        .querySelector('channel > description')
+        .textContent;
+      const channelData = {
+        link: feedURL,
+        title,
+        description,
+        id: uniqueId(),
+      };
+      state.channels = [...state.channels, channelData];
+      console.log(state.channels);
+      const items = Array.from(doc.querySelectorAll('channel > item'));
+      items.forEach((item) => {
+        const link = item.querySelector('link').textContent;
+        const linkTitle = item.querySelector('title').textContent;
+        const itemData = { link, title: linkTitle, channelId: channelData.id, id: uniqueId() };
+        state.items = [...state.items, itemData];
+      });
+    });
+  });
 };
