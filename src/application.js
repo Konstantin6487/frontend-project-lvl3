@@ -1,4 +1,10 @@
-import { isEmpty, head, get, uniqueId, last } from 'lodash-es';
+import {
+  isEmpty,
+  head,
+  get,
+  uniqueId,
+  last,
+} from 'lodash-es';
 import { watch } from 'melanke-watchjs';
 import { isURL } from 'validator';
 import BaseLayout from './BaseLayout';
@@ -28,7 +34,7 @@ export default () => {
     state.channels.forEach((channel) => {
       const li = document.createElement('li');
       li.classList.add('nav-item', 'pl-3');
-      li.innerHTML = `<a href="#" class="nav-link font-weight-bold text-light shadow-lg border-0">#${channel.title}</a>`;
+      li.innerHTML = `<a href="#${channel.id}" class="nav-link font-weight-bold text-light shadow-lg border-0">#${channel.title}</a>`;
       ul.appendChild(li);
     });
   });
@@ -38,12 +44,14 @@ export default () => {
     const input = document.getElementById('feedUrl');
     const btn = form.querySelector('#button-submit');
     if (state.addingChannelProcess.state === 'successed') {
+      input.removeAttribute('disabled');
       input.value = '';
       btn.innerHTML = '';
       btn.textContent = 'Sync';
       return;
     }
     if (state.addingChannelProcess.state === 'processing') {
+      input.setAttribute('disabled', '');
       btn.setAttribute('disabled', '');
       btn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
       Loading...`;
@@ -55,8 +63,7 @@ export default () => {
     const input = form.querySelector('#feedUrl');
     const feedback = form.querySelector('.feedback');
     if (state.addingChannelProcess.validationState === 'invalid') {
-      feedback.className = 'feedback invalid-feedback';
-      feedback.textContent = 'invalid';
+      feedback.className = 'feedback invalid-feedback font-weight-bold';
       feedback.textContent = last(state.addingChannelProcess.errors);
       input.classList.remove('is-valid');
       input.classList.add('is-invalid');
@@ -77,15 +84,26 @@ export default () => {
     btn.setAttribute('disabled', '');
   }, 1);
 
-  watch(state, 'items', () => {
+  watch(state, 'channels', () => {
     const itemsContainer = document.querySelector('section > ul');
     itemsContainer.innerHTML = '';
-    state.items.forEach((item) => {
-      const li = document.createElement('li');
-      li.classList.add('list-group-item', 'mb-2');
-      li.innerHTML = `<a href=${item.link} target="_blank">${item.title}</a>`;
-      itemsContainer.appendChild(li);
-    });
+    state.channels
+      .forEach((channel) => {
+        const items = state.items.filter((item) => item.channelId === channel.id);
+        const section = document.createElement('section');
+        section.classList.add('mb-4');
+        section.innerHTML = `<dl class="p-2 bg-dark text-white border"><dt id=${channel.id}>${channel.title}</dt><dd class="font-italic">${channel.description}</dl>`;
+
+        const ul = document.createElement('ul');
+        items.forEach((item) => {
+          const li = document.createElement('li');
+          li.classList.add('list-group-item', 'mb-2');
+          li.innerHTML = `<a href=${item.link} target="_blank">${item.title}</a>`;
+          ul.appendChild(li);
+        });
+        section.appendChild(ul);
+        itemsContainer.appendChild(section);
+      });
   });
 
   const input = document.getElementById('feedUrl');
@@ -140,9 +158,6 @@ export default () => {
       const contentTypeHeader = get(response, ['headers', 'content-type']);
       const contentType = head(contentTypeHeader.split(';'));
       console.log(contentType);
-      // state.channels = [...state.channels, { url: feedURL }];
-      // console.log(state);
-      // console.log(data);
       const parser = new DOMParser();
       const doc = parser.parseFromString(response.data, contentType === 'application/rss+xml' ? 'application/xml' : contentType);
       const title = doc
@@ -163,7 +178,12 @@ export default () => {
       items.forEach((item) => {
         const link = item.querySelector('link').textContent;
         const linkTitle = item.querySelector('title').textContent;
-        const itemData = { link, title: linkTitle, channelId: channelData.id, id: uniqueId() };
+        const itemData = {
+          link,
+          title: linkTitle,
+          channelId: channelData.id,
+          id: uniqueId(),
+        };
         state.items = [...state.items, itemData];
       });
     });
