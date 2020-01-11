@@ -18,7 +18,7 @@ export default class BaseLayout {
           </div>
         </div>
         <main class="col p-0" role="main">
-          <div class="jumbotron jumbotron-fluid">
+          <div class="jumbotron jumbotron-fluid mb-3">
             <div class="container">
               <h1>RSS Preview</h1>
               <p class="lead">A simple online RSS reader.<br />Enter the URL of the RSS feed, click sync, and preview the results.</p>
@@ -35,13 +35,7 @@ export default class BaseLayout {
             </div>
           </div>
           <section class="container">
-            <ul class="list-group">
-              <li class="list-group-item mb-2">This is a danger list group item</li>
-              <li class="list-group-item mb-2">This is a warning list group item</li>
-              <li class="list-group-item mb-2">This is a info list group item</li>
-              <li class="list-group-item mb-2">This is a light list group item</li>
-              <li class="list-group-item mb-2">This is a dark list group item</li>
-            </ul>
+            <ul class="list-group"></ul>
           </section>
         </main>
       </div>
