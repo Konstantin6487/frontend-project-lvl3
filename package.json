@@ -16,6 +16,7 @@
   "homepage": "https://github.com/Konstantin6487/frontend-project-lvl3#readme",
   "devDependencies": {
     "@babel/core": "^7.7.7",
+    "@babel/plugin-proposal-class-properties": "^7.7.4",
     "@babel/preset-env": "^7.7.7",
     "autoprefixer": "^9.7.3",
     "babel-eslint": "^10.0.3",
@@ -41,7 +42,11 @@
     "webpack-merge": "^4.2.2"
   },
   "dependencies": {
+    "axios": "^0.19.0",
     "bootstrap": "^4.4.1",
-    "lodash-es": "^4.17.15"
+    "lodash-es": "^4.17.15",
+    "melanke-watchjs": "^1.5.0",
+    "url-join": "^4.0.1",
+    "validator": "^12.1.0"
   }
 }
