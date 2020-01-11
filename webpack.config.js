@@ -18,6 +18,7 @@ module.exports = ({ mode }) => webpackMerge({
           loader: 'babel-loader',
           options: {
             presets: ['@babel/preset-env'],
+            plugins: ['@babel/plugin-proposal-class-properties'],
           },
         },
         exclude: /node_modules/,
@@ -28,6 +29,7 @@ module.exports = ({ mode }) => webpackMerge({
     inject: false,
     template,
     title: 'RSS reader',
+    appMountId: 'root',
     minify: {
       collapseWhitespace: true,
     },
