@@ -1,7 +1,9 @@
 import axios from 'axios';
 import urljoin from 'url-join';
 
-const instance = axios.create();
+const instance = axios.create({
+  timeout: 5000,
+});
 
 instance.interceptors.request.use((config) => {
   const corsPrefix = 'https://cors-anywhere.herokuapp.com';
