@@ -13,9 +13,10 @@ import '../scss/app.scss';
 
 export default () => {
   const state = {
+    connectionErrors: [],
     addingChannelProcess: {
       errors: [],
-      state: 'idle', // idle | editing | processing | successed
+      state: 'idle', // idle | editing | processing | successed | rejected
       validationState: 'idle', // idle | invalid | valid
     },
     channels: [],
@@ -50,11 +51,29 @@ export default () => {
       btn.textContent = 'Sync';
       return;
     }
+    if (state.addingChannelProcess.state === 'rejected') {
+      input.removeAttribute('disabled');
+      input.value = '';
+      btn.innerHTML = '';
+      btn.textContent = 'Sync';
+
+      const alert = document.createElement('div');
+      alert.setAttribute('role', 'alert');
+      alert.classList.add('alert', 'alert-danger');
+      alert.textContent = last(state.connectionErrors);
+      form.appendChild(alert);
+      return;
+    }
     if (state.addingChannelProcess.state === 'processing') {
       input.setAttribute('disabled', '');
       btn.setAttribute('disabled', '');
       btn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
       Loading...`;
+      return;
+    }
+    if (state.addingChannelProcess.state === 'idle') {
+      const alert = form.querySelector('.alert');
+      form.removeChild(alert);
     }
   }, 1);
 
@@ -109,6 +128,7 @@ export default () => {
   const input = document.getElementById('feedUrl');
 
   input.addEventListener('focus', (e) => {
+    state.addingChannelProcess.state = 'idle';
     e.target.select();
   });
 
@@ -186,6 +206,13 @@ export default () => {
         };
         state.items = [...state.items, itemData];
       });
+    }).catch((error) => {
+      state.addingChannelProcess.state = 'rejected';
+      state.connectionErrors = [
+        ...state.connectionErrors,
+        error.message,
+      ];
+      // console.log(error.message, error.code);
     });
   });
 };
