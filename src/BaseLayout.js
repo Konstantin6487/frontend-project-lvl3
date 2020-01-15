@@ -7,7 +7,9 @@ export default class BaseLayout {
     <div class="container-fluid">
       <div class="row">
         <nav class="navbar navbar-expand-lg navbar-dark bg-primary w-100">
-          <span class="navbar-brand">RSS reader</span>
+          <a class="navbar-brand" href="https://github.com/Konstantin6487/frontend-project-lvl3">
+            GitHub
+          </a>
         </nav>
       </div>
       <div class="row">
@@ -25,7 +27,7 @@ export default class BaseLayout {
               <form>
                 <label for="feedUrl"><b>Link</b></label>
                 <div class="input-group">
-                  <input type="text" name="feed-url" class="form-control form-control-lg" id="feedUrl" placeholder="RSS Feed URL" aria-describedby="emailHelp">
+                  <input type="text" name="feed-url" class="form-control form-control-lg border-right-0 border-info" id="feedUrl" placeholder="RSS Feed URL" aria-describedby="emailHelp">
                   <div class="input-group-append">
                     <button class="btn btn-primary" type="submit" id="button-submit">Sync</button>
                   </div>

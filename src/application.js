@@ -177,7 +177,6 @@ export default () => {
 
       const contentTypeHeader = get(response, ['headers', 'content-type']);
       const contentType = head(contentTypeHeader.split(';'));
-      console.log(contentType);
       const parser = new DOMParser();
       const doc = parser.parseFromString(response.data, contentType === 'application/rss+xml' ? 'application/xml' : contentType);
       const title = doc
@@ -207,12 +206,12 @@ export default () => {
         state.items = [...state.items, itemData];
       });
     }).catch((error) => {
+      const errorMessage = error.message || 'Connection error';
       state.addingChannelProcess.state = 'rejected';
       state.connectionErrors = [
         ...state.connectionErrors,
-        error.message,
+        errorMessage,
       ];
-      // console.log(error.message, error.code);
     });
   });
 };
