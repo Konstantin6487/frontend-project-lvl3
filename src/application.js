@@ -12,7 +12,43 @@ import httpClient from './configHttpClient';
 import '../scss/app.scss';
 
 export default () => {
-  const state = {
+
+  const selectors = {};
+
+  const renderChannelList = (appState) => () => {
+    const ul = document.getElementsByClassName('nav-tabs')[0];
+    ul.innerHTML = '';
+    appState.channels.forEach((channel) => {
+      const li = document.createElement('li');
+      li.classList.add('nav-item', 'pl-3');
+      li.innerHTML = `<a href="#${channel.id}" class="nav-link font-weight-bold text-light shadow-lg border-0">#${channel.title}</a>`;
+      ul.appendChild(li);
+    });
+  };
+
+  const renderChannelTape = (appState) => () => {
+    const itemsContainer = document.querySelector('section > ul');
+    itemsContainer.innerHTML = '';
+    appState.channels
+      .forEach((channel) => {
+        const items = appState.items.filter((item) => item.channelId === channel.id);
+        const section = document.createElement('section');
+        section.classList.add('mb-4');
+        section.innerHTML = `<dl class="p-2 bg-dark text-white border"><dt id=${channel.id}>${channel.title}</dt><dd class="font-italic">${channel.description}</dl>`;
+
+        const ul = document.createElement('ul');
+        items.forEach((item) => {
+          const li = document.createElement('li');
+          li.classList.add('list-group-item', 'mb-2');
+          li.innerHTML = `<a href=${item.link} target="_blank">${item.title}</a>`;
+          ul.appendChild(li);
+        });
+        section.appendChild(ul);
+        itemsContainer.appendChild(section);
+      });
+  };
+
+  const initState = {
     connectionErrors: [],
     addingChannelProcess: {
       errors: [],
@@ -21,7 +57,13 @@ export default () => {
     },
     channels: [],
     items: [],
+    maxId: 0,
   };
+
+  const preloadState = localStorage.getItem('appState');
+  const parsedPreloadState = JSON.parse(preloadState) || {};
+
+  const state = { ...initState, ...parsedPreloadState };
 
   const root = document.getElementById('root');
   const layout = new BaseLayout(root);
@@ -29,16 +71,16 @@ export default () => {
 
   const [form] = document.getElementsByTagName('form');
 
-  watch(state, 'channels', () => {
-    const ul = document.getElementsByClassName('nav-tabs')[0];
-    ul.innerHTML = '';
-    state.channels.forEach((channel) => {
-      const li = document.createElement('li');
-      li.classList.add('nav-item', 'pl-3');
-      li.innerHTML = `<a href="#${channel.id}" class="nav-link font-weight-bold text-light shadow-lg border-0">#${channel.title}</a>`;
-      ul.appendChild(li);
-    });
+  renderChannelList(state)();
+  renderChannelTape(state)();
+
+  watch(state, () => {
+    const stringified = JSON.stringify(state);
+    localStorage.setItem('appState', stringified);
   });
+
+  watch(state, 'channels', renderChannelList(state));
+  watch(state, 'channels', renderChannelTape(state));
 
   watch(state, 'addingChannelProcess', (prop, _, value) => {
     console.log(`${prop}: ${value}`);
@@ -103,33 +145,22 @@ export default () => {
     btn.setAttribute('disabled', '');
   }, 1);
 
-  watch(state, 'channels', () => {
-    const itemsContainer = document.querySelector('section > ul');
-    itemsContainer.innerHTML = '';
-    state.channels
-      .forEach((channel) => {
-        const items = state.items.filter((item) => item.channelId === channel.id);
-        const section = document.createElement('section');
-        section.classList.add('mb-4');
-        section.innerHTML = `<dl class="p-2 bg-dark text-white border"><dt id=${channel.id}>${channel.title}</dt><dd class="font-italic">${channel.description}</dl>`;
-
-        const ul = document.createElement('ul');
-        items.forEach((item) => {
-          const li = document.createElement('li');
-          li.classList.add('list-group-item', 'mb-2');
-          li.innerHTML = `<a href=${item.link} target="_blank">${item.title}</a>`;
-          ul.appendChild(li);
-        });
-        section.appendChild(ul);
-        itemsContainer.appendChild(section);
-      });
-  });
-
   const input = document.getElementById('feedUrl');
 
   input.addEventListener('focus', (e) => {
     state.addingChannelProcess.state = 'idle';
     e.target.select();
+  });
+
+  input.addEventListener('input', (e) => {
+    const { target: { value } } = e;
+    if (isEmpty(value)) {
+      state.addingChannelProcess.state = 'idle';
+      return;
+    }
+    if (!isEmpty(value)) {
+      state.addingChannelProcess.state = 'editing';
+    }
   });
 
   input.addEventListener('input', (e) => {
@@ -149,17 +180,6 @@ export default () => {
       return;
     }
     state.addingChannelProcess.validationState = 'valid';
-  });
-
-  input.addEventListener('input', (e) => {
-    const { target: { value } } = e;
-    if (isEmpty(value)) {
-      state.addingChannelProcess.state = 'idle';
-      return;
-    }
-    if (!isEmpty(value)) {
-      state.addingChannelProcess.state = 'editing';
-    }
   });
 
   form.addEventListener('submit', (e) => {
@@ -185,23 +205,24 @@ export default () => {
       const description = doc
         .querySelector('channel > description')
         .textContent;
+      const channelId = state.maxId + uniqueId();
       const channelData = {
         link: feedURL,
         title,
         description,
-        id: uniqueId(),
+        id: channelId,
       };
       state.channels = [...state.channels, channelData];
-      console.log(state.channels);
       const items = Array.from(doc.querySelectorAll('channel > item'));
       items.forEach((item) => {
         const link = item.querySelector('link').textContent;
         const linkTitle = item.querySelector('title').textContent;
+        const itemId = state.maxId + uniqueId();
         const itemData = {
           link,
           title: linkTitle,
           channelId: channelData.id,
-          id: uniqueId(),
+          id: itemId,
         };
         state.items = [...state.items, itemData];
       });
