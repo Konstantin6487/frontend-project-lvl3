@@ -38,7 +38,7 @@ export default () => {
         items.forEach((item) => {
           const li = document.createElement('li');
           li.classList.add('list-group-item', 'mb-2');
-          li.innerHTML = `<div><button type="button" class="mr-3 btn btn-info btn-sm">Short</button><a href=${item.link} target="_blank">${item.title}</a></div>`;
+          li.innerHTML = `<div><button type="button" class="mr-3 btn btn-info btn-sm">Show</button><a href=${item.link} target="_blank">${item.title}</a></div>`;
           ul.appendChild(li);
         });
         section.appendChild(ul);
