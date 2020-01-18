@@ -83,7 +83,6 @@ export default () => {
 
   watch(state, 'addingChannelProcess', (prop, _, value) => {
     console.log(`${prop}: ${value}`);
-    const input = document.getElementById('feedUrl');
     const btn = form.querySelector('#button-submit');
     if (state.addingChannelProcess.state === 'successed') {
       input.removeAttribute('disabled');
@@ -120,7 +119,6 @@ export default () => {
 
   watch(state, 'addingChannelProcess', () => {
     const btn = form.querySelector('#button-submit');
-    const input = form.querySelector('#feedUrl');
     const feedback = form.querySelector('.feedback');
     if (state.addingChannelProcess.validationState === 'invalid') {
       feedback.className = 'feedback invalid-feedback font-weight-bold';
