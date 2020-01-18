@@ -38,7 +38,7 @@ export default () => {
         items.forEach((item) => {
           const li = document.createElement('li');
           li.classList.add('list-group-item', 'mb-2');
-          li.innerHTML = `<a href=${item.link} target="_blank">${item.title}</a>`;
+          li.innerHTML = `<div><button type="button" class="mr-3 btn btn-info btn-sm">Short</button><a href=${item.link} target="_blank">${item.title}</a></div>`;
           ul.appendChild(li);
         });
         section.appendChild(ul);
@@ -51,7 +51,7 @@ export default () => {
     addingChannelProcess: {
       errors: [],
       state: 'idle', // idle | editing | processing | successed | rejected
-      validationState: 'idle', // idle | invalid | valid
+      validationState: '', // invalid | valid
     },
     channels: [],
     items: [],
@@ -73,7 +73,11 @@ export default () => {
   renderChannelList(state)();
   renderChannelTape(state)();
 
-  watch(state, () => {
+  // watch(state, () => {
+  //   console.log(state);
+  // });
+
+  watch(state, 'channels', () => {
     const stringified = JSON.stringify(state);
     localStorage.setItem('appState', stringified);
   });
@@ -81,8 +85,7 @@ export default () => {
   watch(state, 'channels', renderChannelList(state));
   watch(state, 'channels', renderChannelTape(state));
 
-  watch(state, 'addingChannelProcess', (prop, _, value) => {
-    console.log(`${prop}: ${value}`);
+  watch(state, 'addingChannelProcess', () => {
     const btn = form.querySelector('#button-submit');
     if (state.addingChannelProcess.state === 'successed') {
       input.removeAttribute('disabled');
@@ -113,9 +116,9 @@ export default () => {
     }
     if (state.addingChannelProcess.state === 'idle') {
       const alert = form.querySelector('.alert');
-      form.removeChild(alert);
+      if (alert) { form.removeChild(alert); }
     }
-  }, 1);
+  });
 
   watch(state, 'addingChannelProcess', () => {
     const btn = form.querySelector('#button-submit');
@@ -140,7 +143,7 @@ export default () => {
     feedback.innerHTML = '';
     input.classList.remove('is-valid', 'is-invalid');
     btn.setAttribute('disabled', '');
-  }, 1);
+  });
 
   input.addEventListener('focus', (e) => {
     state.addingChannelProcess.state = 'idle';
@@ -153,15 +156,13 @@ export default () => {
       state.addingChannelProcess.state = 'idle';
       return;
     }
-    if (!isEmpty(value)) {
-      state.addingChannelProcess.state = 'editing';
-    }
+    state.addingChannelProcess.state = 'editing';
   });
 
   input.addEventListener('input', (e) => {
     const { target: { value } } = e;
     if (isEmpty(value)) {
-      state.addingChannelProcess.validationState = 'idle';
+      state.addingChannelProcess.validationState = '';
       return;
     }
     if (!isURL(value, { require_protocol: true })) {
@@ -183,7 +184,7 @@ export default () => {
       return;
     }
     state.addingChannelProcess.state = 'processing';
-    state.addingChannelProcess.validationState = 'idle';
+    state.addingChannelProcess.validationState = '';
 
     const formData = new FormData(e.target);
     const feedURL = formData.get('feed-url');
@@ -210,12 +211,15 @@ export default () => {
       state.channels = [...state.channels, channelData];
       const items = Array.from(doc.querySelectorAll('channel > item'));
       items.forEach((item) => {
-        const link = item.querySelector('link').textContent;
-        const linkTitle = item.querySelector('title').textContent;
+        console.log(item);
+        const itemLink = item.querySelector('link').textContent;
+        const itemTitle = item.querySelector('title').textContent;
+        const itemDescription = item.querySelector('description').textContent;
         const itemId = state.maxId + uniqueId();
         const itemData = {
-          link,
-          title: linkTitle,
+          link: itemLink,
+          description: itemDescription,
+          title: itemTitle,
           channelId: channelData.id,
           id: itemId,
         };
