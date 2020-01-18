@@ -1,3 +1,3 @@
-import app from './application';
+import run from './application';
 
-app();
+run();

@@ -12,9 +12,6 @@ import httpClient from './configHttpClient';
 import '../scss/app.scss';
 
 export default () => {
-
-  const selectors = {};
-
   const renderChannelList = (appState) => () => {
     const ul = document.getElementsByClassName('nav-tabs')[0];
     ul.innerHTML = '';
