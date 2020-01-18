@@ -8,6 +8,7 @@ import {
 import { watch } from 'melanke-watchjs';
 import { isURL } from 'validator';
 import BaseLayout from './BaseLayout';
+import template from './template';
 import httpClient from './configHttpClient';
 import '../scss/app.scss';
 
@@ -64,7 +65,7 @@ export default () => {
 
   const root = document.getElementById('root');
   const layout = new BaseLayout(root);
-  layout.init();
+  layout.init(template);
 
   const [form] = document.getElementsByTagName('form');
 
