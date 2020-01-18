@@ -31,7 +31,7 @@ export default `
             </form>
           </div>
         </div>
-        <section class="container">
+        <section class="container items-container">
           <ul class="list-group"></ul>
         </section>
       </main>

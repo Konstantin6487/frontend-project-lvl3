@@ -25,7 +25,7 @@ export default () => {
   };
 
   const renderChannelTape = (appState) => () => {
-    const itemsContainer = document.querySelector('section > ul');
+    const itemsContainer = document.querySelector('.items-container > ul');
     itemsContainer.innerHTML = '';
     appState.channels
       .forEach((channel) => {
@@ -68,6 +68,7 @@ export default () => {
   layout.init(template);
 
   const [form] = document.getElementsByTagName('form');
+  const input = document.getElementById('feedUrl');
 
   renderChannelList(state)();
   renderChannelTape(state)();
@@ -142,8 +143,6 @@ export default () => {
     input.classList.remove('is-valid', 'is-invalid');
     btn.setAttribute('disabled', '');
   }, 1);
-
-  const input = document.getElementById('feedUrl');
 
   input.addEventListener('focus', (e) => {
     state.addingChannelProcess.state = 'idle';
