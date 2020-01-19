@@ -32,29 +32,47 @@ export default () => {
     maxId: 0,
   };
 
+  const root = document.getElementById('root');
+  const layout = new BaseLayout(root);
+  layout.init(template);
+
+  const selectors = {
+    navTabs: document.querySelector('.nav-tabs'),
+    itemsContainer: document.querySelector('.items-container > ul'),
+    form: document.querySelector('form'),
+    input: document.querySelector('#feedUrl'),
+    submitBtn: document.querySelector('#button-submit'),
+    modal: document.querySelector('#exampleModal'),
+    feedback: document.querySelector('.feedback'),
+  };
+
+  const { form, modal, input } = selectors;
+
   const renderChannelList = () => {
-    const ul = document.getElementsByClassName('nav-tabs')[0];
-    ul.innerHTML = '';
-    state.channels.forEach((channel) => {
+    const { channels } = state;
+    const { navTabs } = selectors;
+    navTabs.innerHTML = '';
+    channels.forEach((channel) => {
       const li = document.createElement('li');
       li.classList.add('nav-item', 'pl-3');
       li.innerHTML = `<a href="#${channel.id}" class="nav-link font-weight-bold text-light shadow-lg border-0">#${channel.title}</a>`;
-      ul.appendChild(li);
+      navTabs.appendChild(li);
     });
   };
 
   const renderChannelTape = () => {
-    const itemsContainer = document.querySelector('.items-container > ul');
+    const { channels, items } = state;
+    const { itemsContainer } = selectors;
     itemsContainer.innerHTML = '';
-    state.channels
-      .forEach((channel) => {
-        const items = state.items.filter((item) => item.channelId === channel.id);
+    channels
+      .forEach(({ id, title, description }) => {
+        const channelItems = items.filter(({ channelId }) => channelId === id);
         const section = document.createElement('section');
         section.classList.add('mb-4');
-        section.innerHTML = `<dl class="p-2 bg-dark text-white border"><dt id=${channel.id}>${channel.title}</dt><dd class="font-italic">${channel.description}</dl>`;
+        section.innerHTML = `<dl class="p-2 bg-dark text-white border"><dt id=${id}>${title}</dt><dd class="font-italic">${description}</dl>`;
 
         const ul = document.createElement('ul');
-        items.forEach((item) => {
+        channelItems.forEach((item) => {
           const li = document.createElement('li');
           li.classList.add('list-group-item', 'mb-2');
           li.innerHTML = `<div><button type="button" class="mr-3 btn btn-info btn-sm">Show</button><a href=${item.link} target="_blank">${item.title}</a></div>`;
@@ -69,27 +87,24 @@ export default () => {
       });
   };
 
-  const root = document.getElementById('root');
-  const layout = new BaseLayout(root);
-  layout.init(template);
-
-  const [form] = document.getElementsByTagName('form');
-  const input = document.getElementById('feedUrl');
-
   watch(state, 'itemsUIState', () => {
-    const modal = jquery('#exampleModal');
+    const { items } = state;
+    const channelItemModal = jquery('#exampleModal');
     const viewDescriptionState = get(state, ['itemsUIState', 'viewDescriptionState']);
     const activeItem = get(state, ['itemsUIState', 'activeItem']);
     if (viewDescriptionState === 'show') {
-      const activeItemData = state.items.find((item) => item.id === activeItem);
+      const activeItemData = items.find(({ id }) => id === activeItem);
       if (!activeItemData) { return; }
-      modal.find('.modal-title').text(activeItemData.title);
-      modal.find('.modal-body').text(activeItemData.description);
-      modal.modal('show');
+      const channelItemModalTitle = channelItemModal.find('.modal-title');
+      const channelItemModalDescription = channelItemModal.find('.modal-body');
+
+      channelItemModalTitle.text(activeItemData.title);
+      channelItemModalDescription.text(activeItemData.description);
+      channelItemModal.modal('show');
       return;
     }
     if (viewDescriptionState === 'hide') {
-      modal.modal('hide');
+      channelItemModal.modal('hide');
     }
   });
 
@@ -97,79 +112,72 @@ export default () => {
   watch(state, 'channels', renderChannelTape);
 
   watch(state, 'addingChannelProcess', () => {
-    const btn = form.querySelector('#button-submit');
-    if (state.addingChannelProcess.state === 'successed') {
+    const { connectionErrors } = state;
+    const addingChannelProcessState = get(state, ['addingChannelProcess', 'state']);
+    const { submitBtn } = selectors;
+    if (addingChannelProcessState === 'successed') {
       input.removeAttribute('disabled');
       input.value = '';
-      btn.innerHTML = '';
-      btn.textContent = 'Sync';
+      submitBtn.innerHTML = '';
+      submitBtn.textContent = 'Sync';
       return;
     }
-    if (state.addingChannelProcess.state === 'rejected') {
+    if (addingChannelProcessState === 'rejected') {
       input.removeAttribute('disabled');
       input.value = '';
-      btn.innerHTML = '';
-      btn.textContent = 'Sync';
+      submitBtn.innerHTML = '';
+      submitBtn.textContent = 'Sync';
 
       const alert = document.createElement('div');
       alert.setAttribute('role', 'alert');
       alert.classList.add('alert', 'alert-danger');
-      alert.textContent = last(state.connectionErrors);
+      alert.textContent = last(connectionErrors);
       form.appendChild(alert);
       return;
     }
-    if (state.addingChannelProcess.state === 'processing') {
+    if (addingChannelProcessState === 'processing') {
       input.setAttribute('disabled', '');
-      btn.setAttribute('disabled', '');
-      btn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+      submitBtn.setAttribute('disabled', '');
+      submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
       Loading...`;
       return;
     }
-    if (state.addingChannelProcess.state === 'idle') {
+    if (addingChannelProcessState === 'idle') {
       const alert = form.querySelector('.alert');
       if (alert) { form.removeChild(alert); }
     }
   });
 
   watch(state, 'addingChannelProcess', () => {
-    const btn = form.querySelector('#button-submit');
-    const feedback = form.querySelector('.feedback');
-    if (state.addingChannelProcess.validationState === 'invalid') {
+    const validationState = get(state, ['addingChannelProcess', 'validationState']);
+    const errors = get(state, ['addingChannelProcess', 'errors']);
+    const { feedback, submitBtn } = selectors;
+    if (validationState === 'invalid') {
       feedback.className = 'feedback invalid-feedback font-weight-bold';
-      feedback.textContent = last(state.addingChannelProcess.errors);
+      feedback.textContent = last(errors);
       input.classList.remove('is-valid');
       input.classList.add('is-invalid');
-      btn.setAttribute('disabled', '');
+      submitBtn.setAttribute('disabled', '');
       return;
     }
-    if (state.addingChannelProcess.validationState === 'valid') {
+    if (validationState === 'valid') {
       feedback.className = 'feedback is-valid';
       feedback.textContent = '';
       input.classList.remove('is-invalid');
       input.classList.add('is-valid');
-      btn.removeAttribute('disabled');
+      submitBtn.removeAttribute('disabled');
       return;
     }
     feedback.className = 'feedback';
     feedback.innerHTML = '';
     input.classList.remove('is-valid', 'is-invalid');
-    btn.setAttribute('disabled', '');
+    submitBtn.setAttribute('disabled', '');
   });
 
   input.addEventListener('focus', (e) => {
     state.addingChannelProcess.state = 'idle';
     e.target.select();
   });
-
-  document
-    .getElementsByClassName('modal')[0]
-    .querySelectorAll('[data-dismiss="modal"]')
-    .forEach((closeBtn) => {
-      closeBtn.addEventListener('click', () => {
-        state.itemsUIState.viewDescriptionState = 'hide';
-        state.itemsUIState.activeItem = '';
-      });
-    });
 
   input.addEventListener('input', (e) => {
     const { target: { value } } = e;
@@ -181,6 +189,7 @@ export default () => {
   });
 
   input.addEventListener('input', (e) => {
+    const { channels } = state;
     const { target: { value } } = e;
     if (isEmpty(value)) {
       state.addingChannelProcess.validationState = '';
@@ -191,7 +200,8 @@ export default () => {
       state.addingChannelProcess.errors = [...state.addingChannelProcess.errors, 'Invalid URL'];
       return;
     }
-    if (state.channels.some((channel) => channel.link === value)) {
+    const isChannelUrlExist = channels.some(({ link }) => link === value);
+    if (isChannelUrlExist) {
       state.addingChannelProcess.validationState = 'invalid';
       state.addingChannelProcess.errors = [...state.addingChannelProcess.errors, 'This channel is already exists'];
       return;
@@ -199,9 +209,19 @@ export default () => {
     state.addingChannelProcess.validationState = 'valid';
   });
 
+  modal
+    .querySelectorAll('[data-dismiss="modal"]')
+    .forEach((closeBtn) => {
+      closeBtn.addEventListener('click', () => {
+        state.itemsUIState.viewDescriptionState = 'hide';
+        state.itemsUIState.activeItem = '';
+      });
+    });
+
   form.addEventListener('submit', (e) => {
     e.preventDefault();
-    if (state.addingChannelProcess.validationState !== 'valid') {
+    const validationState = get(state, ['addingChannelProcess', 'validationState']);
+    if (validationState !== 'valid') {
       return;
     }
     state.addingChannelProcess.state = 'processing';
@@ -216,12 +236,8 @@ export default () => {
       const contentType = head(contentTypeHeader.split(';'));
       const parser = new DOMParser();
       const doc = parser.parseFromString(response.data, contentType === 'application/rss+xml' ? 'application/xml' : contentType);
-      const title = doc
-        .querySelector('channel > title')
-        .textContent;
-      const description = doc
-        .querySelector('channel > description')
-        .textContent;
+      const title = doc.querySelector('channel > title').textContent;
+      const description = doc.querySelector('channel > description').textContent;
       const channelId = state.maxId + uniqueId();
       const channelData = {
         link: feedURL,
