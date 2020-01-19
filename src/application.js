@@ -5,6 +5,9 @@ import {
   uniqueId,
   last,
 } from 'lodash-es';
+import * as jquery from 'jquery';
+// eslint-disable-next-line no-unused-vars
+import * as bootstrap from 'bootstrap';
 import { watch } from 'melanke-watchjs';
 import { isURL } from 'validator';
 import BaseLayout from './BaseLayout';
@@ -13,10 +16,26 @@ import httpClient from './configHttpClient';
 import '../scss/app.scss';
 
 export default () => {
-  const renderChannelList = (appState) => () => {
+  const state = {
+    connectionErrors: [],
+    addingChannelProcess: {
+      errors: [],
+      state: 'idle', // idle | editing | processing | successed | rejected
+      validationState: '', // invalid | valid
+    },
+    itemsUIState: {
+      viewDescriptionState: 'hide', // hide | show
+      activeItem: '',
+    },
+    channels: [],
+    items: [],
+    maxId: 0,
+  };
+
+  const renderChannelList = () => {
     const ul = document.getElementsByClassName('nav-tabs')[0];
     ul.innerHTML = '';
-    appState.channels.forEach((channel) => {
+    state.channels.forEach((channel) => {
       const li = document.createElement('li');
       li.classList.add('nav-item', 'pl-3');
       li.innerHTML = `<a href="#${channel.id}" class="nav-link font-weight-bold text-light shadow-lg border-0">#${channel.title}</a>`;
@@ -24,12 +43,12 @@ export default () => {
     });
   };
 
-  const renderChannelTape = (appState) => () => {
+  const renderChannelTape = () => {
     const itemsContainer = document.querySelector('.items-container > ul');
     itemsContainer.innerHTML = '';
-    appState.channels
+    state.channels
       .forEach((channel) => {
-        const items = appState.items.filter((item) => item.channelId === channel.id);
+        const items = state.items.filter((item) => item.channelId === channel.id);
         const section = document.createElement('section');
         section.classList.add('mb-4');
         section.innerHTML = `<dl class="p-2 bg-dark text-white border"><dt id=${channel.id}>${channel.title}</dt><dd class="font-italic">${channel.description}</dl>`;
@@ -39,29 +58,16 @@ export default () => {
           const li = document.createElement('li');
           li.classList.add('list-group-item', 'mb-2');
           li.innerHTML = `<div><button type="button" class="mr-3 btn btn-info btn-sm">Show</button><a href=${item.link} target="_blank">${item.title}</a></div>`;
+          li.querySelector('button').addEventListener('click', () => {
+            state.itemsUIState.viewDescriptionState = 'show';
+            state.itemsUIState.activeItem = item.id;
+          });
           ul.appendChild(li);
         });
         section.appendChild(ul);
         itemsContainer.appendChild(section);
       });
   };
-
-  const initState = {
-    connectionErrors: [],
-    addingChannelProcess: {
-      errors: [],
-      state: 'idle', // idle | editing | processing | successed | rejected
-      validationState: '', // invalid | valid
-    },
-    channels: [],
-    items: [],
-    maxId: 0,
-  };
-
-  const preloadState = localStorage.getItem('appState');
-  const parsedPreloadState = JSON.parse(preloadState) || {};
-
-  const state = { ...initState, ...parsedPreloadState };
 
   const root = document.getElementById('root');
   const layout = new BaseLayout(root);
@@ -70,20 +76,25 @@ export default () => {
   const [form] = document.getElementsByTagName('form');
   const input = document.getElementById('feedUrl');
 
-  renderChannelList(state)();
-  renderChannelTape(state)();
-
-  // watch(state, () => {
-  //   console.log(state);
-  // });
-
-  watch(state, 'channels', () => {
-    const stringified = JSON.stringify(state);
-    localStorage.setItem('appState', stringified);
+  watch(state, 'itemsUIState', () => {
+    const modal = jquery('#exampleModal');
+    const viewDescriptionState = get(state, ['itemsUIState', 'viewDescriptionState']);
+    const activeItem = get(state, ['itemsUIState', 'activeItem']);
+    if (viewDescriptionState === 'show') {
+      const activeItemData = state.items.find((item) => item.id === activeItem);
+      if (!activeItemData) { return; }
+      modal.find('.modal-title').text(activeItemData.title);
+      modal.find('.modal-body').text(activeItemData.description);
+      modal.modal('show');
+      return;
+    }
+    if (viewDescriptionState === 'hide') {
+      modal.modal('hide');
+    }
   });
 
-  watch(state, 'channels', renderChannelList(state));
-  watch(state, 'channels', renderChannelTape(state));
+  watch(state, 'channels', renderChannelList);
+  watch(state, 'channels', renderChannelTape);
 
   watch(state, 'addingChannelProcess', () => {
     const btn = form.querySelector('#button-submit');
@@ -150,6 +161,16 @@ export default () => {
     e.target.select();
   });
 
+  document
+    .getElementsByClassName('modal')[0]
+    .querySelectorAll('[data-dismiss="modal"]')
+    .forEach((closeBtn) => {
+      closeBtn.addEventListener('click', () => {
+        state.itemsUIState.viewDescriptionState = 'hide';
+        state.itemsUIState.activeItem = '';
+      });
+    });
+
   input.addEventListener('input', (e) => {
     const { target: { value } } = e;
     if (isEmpty(value)) {
@@ -211,7 +232,6 @@ export default () => {
       state.channels = [...state.channels, channelData];
       const items = Array.from(doc.querySelectorAll('channel > item'));
       items.forEach((item) => {
-        console.log(item);
         const itemLink = item.querySelector('link').textContent;
         const itemTitle = item.querySelector('title').textContent;
         const itemDescription = item.querySelector('description').textContent;
