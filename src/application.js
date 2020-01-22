@@ -1,4 +1,7 @@
+import '@babel/polyfill';
+
 import {
+  differenceBy,
   isEmpty,
   head,
   get,
@@ -10,6 +13,7 @@ import * as jquery from 'jquery';
 import * as bootstrap from 'bootstrap';
 import { watch } from 'melanke-watchjs';
 import { isURL } from 'validator';
+import parseData from './parsers';
 import BaseLayout from './BaseLayout';
 import template from './template';
 import httpClient from './configHttpClient';
@@ -47,6 +51,42 @@ export default () => {
   };
 
   const { form, modal, input } = selectors;
+
+  const updateChannel = (url) => new Promise((res) => setTimeout(() => httpClient
+    .get(url)
+    .then(res), 5000))
+    .then((response) => {
+      const contentTypeHeader = get(response, ['headers', 'content-type']);
+      const contentType = head(contentTypeHeader.split(';'));
+      const parsed = parseData(response.data, contentType);
+
+      const channelToUpdate = state.channels.find((channel) => channel.link === url);
+      const { id } = channelToUpdate;
+      const prevChannelItems = state.items.filter((item) => item.channelId === id);
+
+      const newChannelItems = Array
+        .from(parsed.querySelectorAll('channel > item'))
+        .map((item) => {
+          const itemLink = item.querySelector('link').textContent;
+          const itemTitle = item.querySelector('title').textContent;
+          const itemDescription = item.querySelector('description').textContent;
+          const itemId = state.maxId + uniqueId();
+          const itemData = {
+            link: itemLink,
+            description: itemDescription,
+            title: itemTitle,
+            channelId: id,
+            id: itemId,
+          };
+          return itemData;
+        });
+      const diff = differenceBy(newChannelItems, prevChannelItems, 'title');
+      if (isEmpty(diff)) {
+        return;
+      }
+      state.items = [...diff, ...state.items];
+    })
+    .then(() => updateChannel(url));
 
   const renderChannelList = () => {
     const { channels } = state;
@@ -87,6 +127,8 @@ export default () => {
       });
   };
 
+  watch(state, 'items', () => console.log(state.items));
+
   watch(state, 'itemsUIState', () => {
     const { items } = state;
     const channelItemModal = jquery('#exampleModal');
@@ -110,6 +152,7 @@ export default () => {
 
   watch(state, 'channels', renderChannelList);
   watch(state, 'channels', renderChannelTape);
+  watch(state, 'items', renderChannelTape);
 
   watch(state, 'addingChannelProcess', () => {
     const { connectionErrors } = state;
@@ -234,10 +277,9 @@ export default () => {
 
       const contentTypeHeader = get(response, ['headers', 'content-type']);
       const contentType = head(contentTypeHeader.split(';'));
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(response.data, contentType === 'application/rss+xml' ? 'application/xml' : contentType);
-      const title = doc.querySelector('channel > title').textContent;
-      const description = doc.querySelector('channel > description').textContent;
+      const parsed = parseData(response.data, contentType);
+      const title = parsed.querySelector('channel > title').textContent;
+      const description = parsed.querySelector('channel > description').textContent;
       const channelId = state.maxId + uniqueId();
       const channelData = {
         link: feedURL,
@@ -246,7 +288,7 @@ export default () => {
         id: channelId,
       };
       state.channels = [...state.channels, channelData];
-      const items = Array.from(doc.querySelectorAll('channel > item'));
+      const items = Array.from(parsed.querySelectorAll('channel > item'));
       items.forEach((item) => {
         const itemLink = item.querySelector('link').textContent;
         const itemTitle = item.querySelector('title').textContent;
@@ -261,13 +303,14 @@ export default () => {
         };
         state.items = [...state.items, itemData];
       });
-    }).catch((error) => {
-      const errorMessage = error.message || 'Connection error';
-      state.addingChannelProcess.state = 'rejected';
-      state.connectionErrors = [
-        ...state.connectionErrors,
-        errorMessage,
-      ];
-    });
+    }).then(() => updateChannel(feedURL))
+      .catch((error) => {
+        const errorMessage = error.message || 'Connection error';
+        state.addingChannelProcess.state = 'rejected';
+        state.connectionErrors = [
+          ...state.connectionErrors,
+          errorMessage,
+        ];
+      });
   });
 };
