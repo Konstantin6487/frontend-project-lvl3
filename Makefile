@@ -4,7 +4,7 @@ install-deps:
 	npm install
 
 develop:
-	npx webpack-dev-server --env.mode development
+	npx webpack-dev-server --port 8081 --env.mode development
 
 build:
 	npx webpack --env.mode production
