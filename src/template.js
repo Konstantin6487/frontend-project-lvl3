@@ -38,7 +38,7 @@ export default `
             <form>
               <label for="feedUrl"><b>Link</b></label>
               <div class="input-group">
-                <input type="text" name="feed-url" class="form-control form-control-lg border-right-0 border-info" id="feedUrl" placeholder="RSS Feed URL" aria-describedby="emailHelp">
+                <input required type="text" name="feed-url" class="form-control form-control-lg border-right-0 border-info" id="feedUrl" placeholder="RSS Feed URL" aria-describedby="emailHelp">
                 <div class="input-group-append">
                   <button class="btn btn-primary" type="submit" id="button-submit">Sync</button>
                 </div>

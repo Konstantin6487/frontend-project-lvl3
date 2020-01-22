@@ -211,10 +211,12 @@ export default () => {
       submitBtn.removeAttribute('disabled');
       return;
     }
+    if (validationState === '' && state.addingChannelProcess.state === 'processing') {
+      submitBtn.setAttribute('disabled', '');
+    } else { submitBtn.removeAttribute('disabled'); }
     feedback.className = 'feedback';
     feedback.innerHTML = '';
     input.classList.remove('is-valid', 'is-invalid');
-    submitBtn.setAttribute('disabled', '');
   });
 
   input.addEventListener('focus', (e) => {
