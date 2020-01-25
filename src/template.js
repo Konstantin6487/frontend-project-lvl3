@@ -1,15 +1,15 @@
 export default `
   <div class="container-fluid">
-    <div class="modal fade" id="exampleModal" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal fade" id="channelItemModal" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="channelItemModalLabel" aria-hidden="true">
       <div class="modal-dialog" role="document">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" id="exampleModalLabel">Modal title</h5>
+            <h5 class="modal-title" id="channelItemModalLabel"></h5>
             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
               <span aria-hidden="true">&times;</span>
             </button>
           </div>
-          <div class="modal-body">...dsd</div>
+          <div class="modal-body"></div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
           </div>
@@ -24,19 +24,21 @@ export default `
       </nav>
     </div>
     <div class="row">
-      <div class="col-sm-2 px-0 bg-dark min-vh-100">
+      <div id="sidebar" class="d-none col-sm-2 px-0 bg-dark min-vh-100">
         <div class="sticky-top pt-1">
-          <span class="pl-3 font-weight-bold text-muted font-italic border-0">Channels</span>
+          <a href="#home" class="nav-link font-weight-bold text-light shadow-lg border-0 pl-3 border-0">#Home</a>
+          <p class="pl-3 mb-0 font-weight-bold text-muted font-italic border-0">Channels</p>
           <ul class="nav nav-tabs flex-sm-column border-0"></ul>
         </div>
       </div>
       <main class="col p-0" role="main">
-        <div class="jumbotron jumbotron-fluid mb-3">
+        <div class="jumbotron jumbotron-fluid mb-3" id="home">
           <div class="container">
             <h1>RSS Preview</h1>
-            <p class="lead">A simple online RSS reader.<br />Enter the URL of the RSS feed, click sync, and preview the results.</p>
             <form>
-              <label for="feedUrl"><b>Link</b></label>
+              <label for="feedUrl">
+                <p class="lead">A simple online RSS reader.<br />Enter the URL of the RSS feed, click sync, and preview the results.</p>
+              </label>
               <div class="input-group">
                 <input required type="text" name="feed-url" class="form-control form-control-lg border-right-0 border-info" id="feedUrl" placeholder="RSS Feed URL" aria-describedby="emailHelp">
                 <div class="input-group-append">
