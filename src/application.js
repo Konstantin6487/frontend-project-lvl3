@@ -280,11 +280,14 @@ export default () => {
     const formData = new FormData(e.target);
     const feedURL = formData.get('feed-url');
     httpClient.get(feedURL).then((response) => {
-      state.addingChannelProcess.state = 'successed';
-
       const contentTypeHeader = get(response, ['headers', 'content-type']);
       const contentType = head(contentTypeHeader.split(';'));
       const parsed = parseData(response.data, contentType);
+
+      if (parsed.querySelector('channel') === null) {
+        return Promise.reject(new Error('Parsing error'));
+      }
+
       const title = parsed.querySelector('channel > title').textContent;
       const description = parsed.querySelector('channel > description').textContent;
       const channelId = state.maxId + uniqueId();
@@ -294,7 +297,10 @@ export default () => {
         description,
         id: channelId,
       };
+
+      state.addingChannelProcess.state = 'successed';
       state.channels = [...state.channels, channelData];
+
       const items = Array.from(parsed.querySelectorAll('channel > item'));
       items.forEach((item) => {
         const itemLink = item.querySelector('link').textContent;
@@ -310,6 +316,7 @@ export default () => {
         };
         state.items = [...state.items, itemData];
       });
+      return Promise.resolve();
     }).then(() => updateChannel(feedURL))
       .catch((error) => {
         console.error(error);
