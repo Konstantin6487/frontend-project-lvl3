@@ -9,8 +9,7 @@ import {
   last,
 } from 'lodash-es';
 import * as jquery from 'jquery';
-// eslint-disable-next-line no-unused-vars
-import * as bootstrap from 'bootstrap';
+import * as bootstrap from 'bootstrap'; // eslint-disable-line no-unused-vars
 import { watch } from 'melanke-watchjs';
 import { isURL } from 'validator';
 import parseData from './parsers';
@@ -53,9 +52,8 @@ export default () => {
 
   const { form, modal, input } = selectors;
 
-  const updateChannel = (url) => new Promise((res) => setTimeout(() => httpClient
-    .get(url)
-    .then(res), 5000))
+  const updateChannel = (url) => new Promise((res) => setTimeout(res, 5000))
+    .then(() => httpClient.get(url))
     .then((response) => {
       const contentTypeHeader = get(response, ['headers', 'content-type']);
       const contentType = head(contentTypeHeader.split(';'));
@@ -87,7 +85,8 @@ export default () => {
       }
       state.items = [...diff, ...state.items];
     })
-    .then(() => updateChannel(url));
+    .catch(console.error)
+    .finally(() => updateChannel(url));
 
   const renderChannelList = (...args) => {
     const { channels } = state;
@@ -313,6 +312,7 @@ export default () => {
       });
     }).then(() => updateChannel(feedURL))
       .catch((error) => {
+        console.error(error);
         const errorMessage = error.message || 'Connection error';
         state.addingChannelProcess.state = 'rejected';
         state.connectionErrors = [
