@@ -1,12 +1,14 @@
 import '@babel/polyfill';
 
 import {
+  delay,
   differenceBy,
   isEmpty,
   head,
   get,
   uniqueId,
   last,
+  noop,
 } from 'lodash-es';
 import * as jquery from 'jquery';
 import bootstrap from 'bootstrap'; // eslint-disable-line no-unused-vars
@@ -47,8 +49,7 @@ export default () => {
 
   const { form, modal, input } = selectors;
 
-  const updateChannel = (url) => new Promise((res) => setTimeout(res, 5000))
-    .then(() => httpClient.get(url))
+  const updateChannel = (url) => httpClient.get(url)
     .then((response) => {
       const contentTypeHeader = get(response, ['headers', 'content-type']);
       const contentType = head(contentTypeHeader.split(';'));
@@ -81,7 +82,7 @@ export default () => {
       state.items = [...diff, ...state.items];
     })
     .catch(console.error)
-    .finally(() => updateChannel(url));
+    .finally(() => delay(updateChannel, 5000, url));
 
   const renderChannelList = (...args) => {
     const { channels } = state;
@@ -265,10 +266,7 @@ export default () => {
 
   form.addEventListener('submit', (e) => {
     e.preventDefault();
-    const validationState = get(state, ['addingChannelProcess', 'validationState']);
-    if (validationState !== 'valid') {
-      return;
-    }
+
     state.addingChannelProcess.state = 'processing';
     state.addingChannelProcess.validationState = '';
 
@@ -312,7 +310,8 @@ export default () => {
         state.items = [...state.items, itemData];
       });
       return Promise.resolve();
-    }).then(() => updateChannel(feedURL))
+    }).then(() => delay(noop, 5000))
+      .then(() => updateChannel(feedURL))
       .catch((error) => {
         console.error(error);
         const errorMessage = error.message || 'Connection error';
