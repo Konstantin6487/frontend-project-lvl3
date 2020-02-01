@@ -9,12 +9,11 @@ import {
   last,
 } from 'lodash-es';
 import * as jquery from 'jquery';
-import * as bootstrap from 'bootstrap'; // eslint-disable-line no-unused-vars
+import bootstrap from 'bootstrap'; // eslint-disable-line no-unused-vars
 import { watch } from 'melanke-watchjs';
 import { isURL } from 'validator';
 import parseData from './parsers';
-import BaseLayout from './BaseLayout';
-import template from './template';
+
 import httpClient from './configHttpClient';
 import '../scss/app.scss';
 
@@ -34,10 +33,6 @@ export default () => {
     items: [],
     maxId: 0,
   };
-
-  const root = document.getElementById('root');
-  const layout = new BaseLayout(root);
-  layout.init(template);
 
   const selectors = {
     sidebar: document.querySelector('#sidebar'),
