@@ -1,14 +1,9 @@
-const webpackMerge = require('webpack-merge');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-const template = require('html-webpack-template');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const OptimizeCssAssetsPlugin = require('optimize-css-assets-webpack-plugin');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 
-const modeConfig = (env) => {
-  // eslint-disable-next-line
-  const getConfig = require(`./build-utils/webpack.${env.mode}`);
-  return getConfig();
-};
-
-module.exports = ({ mode }) => webpackMerge({
+module.exports = ({ mode }) => ({
   mode,
   module: {
     rules: [
@@ -18,20 +13,42 @@ module.exports = ({ mode }) => webpackMerge({
           loader: 'babel-loader',
           options: {
             presets: ['@babel/preset-env'],
-            plugins: ['@babel/plugin-proposal-class-properties'],
           },
         },
         exclude: /node_modules/,
       },
+      {
+        test: /\.(scss)$/,
+        use: [{
+          loader: MiniCssExtractPlugin.loader,
+        }, {
+          loader: 'css-loader',
+        }, {
+          loader: 'postcss-loader',
+          options: {
+            plugins() {
+              return [
+                // eslint-disable-next-line global-require
+                require('precss'), require('autoprefixer'),
+              ];
+            },
+          },
+        }, {
+          loader: 'sass-loader',
+        }],
+      },
     ],
   },
-  plugins: [new HtmlWebpackPlugin({
-    inject: false,
-    template,
-    title: 'RSS reader',
-    appMountId: 'root',
-    minify: {
-      collapseWhitespace: true,
-    },
-  })],
-}, modeConfig({ mode }));
+  plugins: [
+    new HtmlWebpackPlugin({
+      template: 'assets/template.html',
+      title: 'RSSPreview',
+      minify: {
+        collapseWhitespace: true,
+      },
+    }),
+    new MiniCssExtractPlugin(),
+    new OptimizeCssAssetsPlugin(),
+  ].concat(mode === 'production' ? new CleanWebpackPlugin() : []),
+  devtool: 'eval-source-map',
+});
