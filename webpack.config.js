@@ -1,3 +1,4 @@
+const { ProvidePlugin } = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const OptimizeCssAssetsPlugin = require('optimize-css-assets-webpack-plugin');
@@ -46,6 +47,9 @@ module.exports = ({ mode }) => ({
       minify: {
         collapseWhitespace: true,
       },
+    }),
+    new ProvidePlugin({
+      jquery: 'jquery',
     }),
     new MiniCssExtractPlugin(),
     new OptimizeCssAssetsPlugin(),

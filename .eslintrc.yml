@@ -12,5 +12,8 @@ parser: babel-eslint
 extends:
   - 'airbnb-base'
 
+globals:
+  jquery: true
+
 rules:
   no-console: 0
