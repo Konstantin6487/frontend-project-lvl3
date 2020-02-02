@@ -1,6 +1,3 @@
-import 'core-js/stable';
-import 'regenerator-runtime/runtime';
-
 import {
   delay,
   differenceBy,
@@ -11,14 +8,11 @@ import {
   last,
   noop,
 } from 'lodash-es';
-import * as jquery from 'jquery';
-import bootstrap from 'bootstrap'; // eslint-disable-line no-unused-vars
 import { watch } from 'melanke-watchjs';
 import { isURL } from 'validator';
 import parseData from './parsers';
 
 import httpClient from './configHttpClient';
-import '../scss/app.scss';
 
 export default () => {
   const state = {
