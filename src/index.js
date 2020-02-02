@@ -1,6 +1,6 @@
 import 'core-js/stable';
 import 'regenerator-runtime/runtime';
-import './shared';
+import 'bootstrap';
 import '../scss/app.scss';
 
 import run from './application';
