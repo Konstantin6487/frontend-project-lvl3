@@ -41,7 +41,7 @@ module.exports = ({ mode }) => ({
   },
   plugins: [
     new HtmlWebpackPlugin({
-      template: 'assets/template.html',
+      template: 'template.html',
       title: 'RSSPreview',
       minify: {
         collapseWhitespace: true,
