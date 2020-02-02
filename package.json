@@ -14,6 +14,10 @@
     "url": "https://github.com/Konstantin6487/frontend-project-lvl3/issues"
   },
   "homepage": "https://github.com/Konstantin6487/frontend-project-lvl3#readme",
+  "scripts":{
+    "develop": "npx webpack-dev-server --port 8081 --env.mode development",
+    "build": "npx webpack --env.mode production"
+  },
   "devDependencies": {
     "@babel/core": "^7.8.4",
     "@babel/preset-env": "^7.7.7",

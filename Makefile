@@ -4,10 +4,10 @@ install-deps:
 	npm install
 
 develop:
-	npx webpack-dev-server --port 8081 --env.mode development
+	npm run develop
 
 build:
-	npx webpack --env.mode production
+	npm run build
 
 lint:
 	npx eslint .
