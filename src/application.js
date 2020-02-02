@@ -11,6 +11,7 @@ import {
 import { watch } from 'melanke-watchjs';
 import { isURL } from 'validator';
 import parseData from './parsers';
+import buildUrl from './utils';
 
 import httpClient from './configHttpClient';
 
@@ -44,40 +45,43 @@ export default () => {
 
   const { form, modal, input } = selectors;
 
-  const updateChannel = (url) => httpClient.get(url)
-    .then((response) => {
-      const contentTypeHeader = get(response, ['headers', 'content-type']);
-      const contentType = head(contentTypeHeader.split(';'));
-      const parsed = parseData(response.data, contentType);
+  const updateChannel = (url) => {
+    const buildedUrl = buildUrl(url);
+    return httpClient(buildedUrl)
+      .then((response) => {
+        const contentTypeHeader = get(response, ['headers', 'content-type']);
+        const contentType = head(contentTypeHeader.split(';'));
+        const parsed = parseData(response.data, contentType);
 
-      const channelToUpdate = state.channels.find((channel) => channel.link === url);
-      const { id } = channelToUpdate;
-      const prevChannelItems = state.items.filter((item) => item.channelId === id);
+        const channelToUpdate = state.channels.find((channel) => channel.link === url);
+        const { id } = channelToUpdate;
+        const prevChannelItems = state.items.filter((item) => item.channelId === id);
 
-      const newChannelItems = Array
-        .from(parsed.querySelectorAll('channel > item'))
-        .map((item) => {
-          const itemLink = item.querySelector('link').textContent;
-          const itemTitle = item.querySelector('title').textContent;
-          const itemDescription = item.querySelector('description').textContent;
-          const itemId = state.maxId + uniqueId();
-          const itemData = {
-            link: itemLink,
-            description: itemDescription,
-            title: itemTitle,
-            channelId: id,
-            id: itemId,
-          };
-          return itemData;
-        });
-      const diff = differenceBy(newChannelItems, prevChannelItems, 'title');
-      if (isEmpty(diff)) {
-        return;
-      }
-      state.items = [...diff, ...state.items];
-    })
-    .catch(console.error)
-    .finally(() => delay(updateChannel, 5000, url));
+        const newChannelItems = Array
+          .from(parsed.querySelectorAll('channel > item'))
+          .map((item) => {
+            const itemLink = item.querySelector('link').textContent;
+            const itemTitle = item.querySelector('title').textContent;
+            const itemDescription = item.querySelector('description').textContent;
+            const itemId = state.maxId + uniqueId();
+            const itemData = {
+              link: itemLink,
+              description: itemDescription,
+              title: itemTitle,
+              channelId: id,
+              id: itemId,
+            };
+            return itemData;
+          });
+        const diff = differenceBy(newChannelItems, prevChannelItems, 'title');
+        if (isEmpty(diff)) {
+          return;
+        }
+        state.items = [...diff, ...state.items];
+      })
+      .catch(console.error)
+      .finally(() => delay(updateChannel, 5000, url));
+  };
 
   const renderChannelList = (...args) => {
     const { channels } = state;
@@ -267,7 +271,10 @@ export default () => {
 
     const formData = new FormData(e.target);
     const feedURL = formData.get('feed-url');
-    httpClient.get(feedURL).then((response) => {
+
+    const buildedUrl = buildUrl(feedURL);
+
+    httpClient(buildedUrl).then((response) => {
       const contentTypeHeader = get(response, ['headers', 'content-type']);
       const contentType = head(contentTypeHeader.split(';'));
       const parsed = parseData(response.data, contentType);
