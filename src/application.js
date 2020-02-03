@@ -4,13 +4,16 @@ import {
   isEmpty,
   head,
   get,
-  uniqueId,
   last,
   noop,
 } from 'lodash-es';
 import { watch } from 'melanke-watchjs';
 import { isURL } from 'validator';
-import parseData from './parsers';
+import {
+  parseDOMStr,
+  parseToChannelData,
+  parseToChannelItems,
+} from './parsers';
 import buildUrl from './utils';
 
 import httpClient from './configHttpClient';
@@ -49,46 +52,31 @@ export default () => {
     const buildedUrl = buildUrl(url);
     return httpClient(buildedUrl)
       .then((response) => {
+        const { items, maxId, channels } = state;
         const contentTypeHeader = get(response, ['headers', 'content-type']);
         const contentType = head(contentTypeHeader.split(';'));
-        const parsed = parseData(response.data, contentType);
 
-        const channelToUpdate = state.channels.find((channel) => channel.link === url);
-        const { id } = channelToUpdate;
-        const prevChannelItems = state.items.filter((item) => item.channelId === id);
+        const dom = parseDOMStr(response.data, contentType);
+        const channelToUpdate = channels.find((channel) => channel.link === url);
+        const { id: channelId } = channelToUpdate;
 
-        const newChannelItems = Array
-          .from(parsed.querySelectorAll('channel > item'))
-          .map((item) => {
-            const itemLink = item.querySelector('link').textContent;
-            const itemTitle = item.querySelector('title').textContent;
-            const itemDescription = item.querySelector('description').textContent;
-            const itemId = state.maxId + uniqueId();
-            const itemData = {
-              link: itemLink,
-              description: itemDescription,
-              title: itemTitle,
-              channelId: id,
-              id: itemId,
-            };
-            return itemData;
-          });
+        const prevChannelItems = items.filter((item) => item.channelId === channelId);
+        const newChannelItems = parseToChannelItems(dom, { maxId, channelId });
         const diff = differenceBy(newChannelItems, prevChannelItems, 'title');
         if (isEmpty(diff)) {
           return;
         }
-        state.items = [...diff, ...state.items];
+        state.items.unshift(...diff);
       })
       .catch(console.error)
       .finally(() => delay(updateChannel, 5000, url));
   };
 
-  const renderChannelList = (...args) => {
+  const renderChannelList = () => {
     const { channels } = state;
     const { navTabs, sidebar } = selectors;
     if (isEmpty(channels)) { return; }
-    const [, , , oldList] = args;
-    if (isEmpty(oldList)) {
+    if (channels.length === 1) {
       sidebar.classList.remove('d-none');
     }
     navTabs.innerHTML = '';
@@ -242,13 +230,13 @@ export default () => {
     }
     if (!isURL(value, { require_protocol: true })) {
       state.addingChannelProcess.validationState = 'invalid';
-      state.addingChannelProcess.errors = [...state.addingChannelProcess.errors, 'Invalid URL'];
+      state.addingChannelProcess.errors.push('Invalid URL');
       return;
     }
     const isChannelUrlExist = channels.some(({ link }) => link === value);
     if (isChannelUrlExist) {
       state.addingChannelProcess.validationState = 'invalid';
-      state.addingChannelProcess.errors = [...state.addingChannelProcess.errors, 'This channel is already exists'];
+      state.addingChannelProcess.errors.push('This channel is already exists');
       return;
     }
     state.addingChannelProcess.validationState = 'valid';
@@ -275,42 +263,25 @@ export default () => {
     const buildedUrl = buildUrl(feedURL);
 
     httpClient(buildedUrl).then((response) => {
+      const {
+        addingChannelProcess,
+        items,
+        channels,
+        maxId,
+      } = state;
+
       const contentTypeHeader = get(response, ['headers', 'content-type']);
       const contentType = head(contentTypeHeader.split(';'));
-      const parsed = parseData(response.data, contentType);
+      const dom = parseDOMStr(response.data, contentType);
+      const channelData = parseToChannelData(dom, { maxId, feedURL });
+      const newChannelItems = parseToChannelItems(
+        dom,
+        { maxId, channelId: channelData.id },
+      );
 
-      if (parsed.querySelector('channel') === null) {
-        return Promise.reject(new Error('Parsing error'));
-      }
-
-      const title = parsed.querySelector('channel > title').textContent;
-      const description = parsed.querySelector('channel > description').textContent;
-      const channelId = state.maxId + uniqueId();
-      const channelData = {
-        link: feedURL,
-        title,
-        description,
-        id: channelId,
-      };
-
-      state.addingChannelProcess.state = 'successed';
-      state.channels = [...state.channels, channelData];
-
-      const items = Array.from(parsed.querySelectorAll('channel > item'));
-      items.forEach((item) => {
-        const itemLink = item.querySelector('link').textContent;
-        const itemTitle = item.querySelector('title').textContent;
-        const itemDescription = item.querySelector('description').textContent;
-        const itemId = state.maxId + uniqueId();
-        const itemData = {
-          link: itemLink,
-          description: itemDescription,
-          title: itemTitle,
-          channelId: channelData.id,
-          id: itemId,
-        };
-        state.items = [...state.items, itemData];
-      });
+      addingChannelProcess.state = 'successed';
+      channels.push(channelData);
+      items.push(...newChannelItems);
       return Promise.resolve();
     }).then(() => delay(noop, 5000))
       .then(() => updateChannel(feedURL))
@@ -318,10 +289,7 @@ export default () => {
         console.error(error);
         const errorMessage = error.message || 'Connection error';
         state.addingChannelProcess.state = 'rejected';
-        state.connectionErrors = [
-          ...state.connectionErrors,
-          errorMessage,
-        ];
+        state.connectionErrors.push(errorMessage);
       });
   });
 };
