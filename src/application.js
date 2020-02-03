@@ -5,7 +5,6 @@ import {
   head,
   get,
   last,
-  noop,
 } from 'lodash-es';
 import { watch } from 'melanke-watchjs';
 import { isURL } from 'validator';
@@ -146,36 +145,38 @@ export default () => {
     const { connectionErrors } = state;
     const addingChannelProcessState = get(state, ['addingChannelProcess', 'state']);
     const { submitBtn } = selectors;
-    if (addingChannelProcessState === 'successed') {
-      input.removeAttribute('disabled');
-      input.value = '';
-      submitBtn.innerHTML = '';
-      submitBtn.textContent = 'Sync';
-      return;
-    }
-    if (addingChannelProcessState === 'rejected') {
-      input.removeAttribute('disabled');
-      input.value = '';
-      submitBtn.innerHTML = '';
-      submitBtn.textContent = 'Sync';
+    const alert = document.createElement('div');
+    const formAlert = form.querySelector('.alert');
 
-      const alert = document.createElement('div');
-      alert.setAttribute('role', 'alert');
-      alert.classList.add('alert', 'alert-danger');
-      alert.textContent = last(connectionErrors);
-      form.appendChild(alert);
-      return;
-    }
-    if (addingChannelProcessState === 'processing') {
-      input.setAttribute('disabled', '');
-      submitBtn.setAttribute('disabled', '');
-      submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-      Loading...`;
-      return;
-    }
-    if (addingChannelProcessState === 'idle') {
-      const alert = form.querySelector('.alert');
-      if (alert) { form.removeChild(alert); }
+    switch (addingChannelProcessState) {
+      case 'successed':
+        input.removeAttribute('disabled');
+        input.value = '';
+        submitBtn.innerHTML = '';
+        submitBtn.textContent = 'Sync';
+        return;
+      case 'rejected':
+        input.removeAttribute('disabled');
+        input.value = '';
+        submitBtn.innerHTML = '';
+        submitBtn.textContent = 'Sync';
+
+        alert.setAttribute('role', 'alert');
+        alert.classList.add('alert', 'alert-danger');
+        alert.textContent = last(connectionErrors);
+        form.appendChild(alert);
+        return;
+      case 'processing':
+        input.setAttribute('disabled', '');
+        submitBtn.setAttribute('disabled', '');
+        submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+        Loading...`;
+        return;
+      case 'idle':
+        if (formAlert) { form.removeChild(formAlert); }
+        break;
+      default:
+        break;
     }
   });
 
@@ -283,8 +284,8 @@ export default () => {
       channels.push(channelData);
       items.push(...newChannelItems);
       return Promise.resolve();
-    }).then(() => delay(noop, 5000))
-      .then(() => updateChannel(feedURL))
+    })
+      .then(() => delay(updateChannel, 5000, feedURL))
       .catch((error) => {
         console.error(error);
         const errorMessage = error.message || 'Connection error';
