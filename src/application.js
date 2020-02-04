@@ -2,7 +2,6 @@ import {
   delay,
   differenceBy,
   isEmpty,
-  head,
   get,
   last,
 } from 'lodash-es';
@@ -52,10 +51,8 @@ export default () => {
     return httpClient(buildedUrl)
       .then((response) => {
         const { items, maxId, channels } = state;
-        const contentTypeHeader = get(response, ['headers', 'content-type']);
-        const contentType = head(contentTypeHeader.split(';'));
 
-        const dom = parseDOMStr(response.data, contentType);
+        const dom = parseDOMStr(response.data, 'application/xml');
         const channelToUpdate = channels.find((channel) => channel.link === url);
         const { id: channelId } = channelToUpdate;
 
@@ -271,9 +268,7 @@ export default () => {
         maxId,
       } = state;
 
-      const contentTypeHeader = get(response, ['headers', 'content-type']);
-      const contentType = head(contentTypeHeader.split(';'));
-      const dom = parseDOMStr(response.data, contentType);
+      const dom = parseDOMStr(response.data, 'application/xml');
       const channelData = parseToChannelData(dom, { maxId, feedURL });
       const newChannelItems = parseToChannelItems(
         dom,
