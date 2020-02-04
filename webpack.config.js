@@ -54,5 +54,5 @@ module.exports = ({ mode }) => ({
     new MiniCssExtractPlugin(),
     new OptimizeCssAssetsPlugin(),
   ].concat(mode === 'production' ? new CleanWebpackPlugin() : []),
-  devtool: 'eval-source-map',
+  devtool: mode === 'development' && 'eval-source-map',
 });
