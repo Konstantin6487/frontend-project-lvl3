@@ -8,9 +8,8 @@ import {
 import { watch } from 'melanke-watchjs';
 import { isURL } from 'validator';
 import {
-  parseDOMStr,
-  parseToChannelData,
-  parseToChannelItems,
+  parse,
+  selectChannelContent,
 } from './parsers';
 import buildUrl from './utils';
 
@@ -52,12 +51,13 @@ export default () => {
       .then((response) => {
         const { items, maxId, channels } = state;
 
-        const dom = parseDOMStr(response.data, 'application/xml');
+        const model = parse(response.data, 'application/xml');
         const channelToUpdate = channels.find((channel) => channel.link === url);
         const { id: channelId } = channelToUpdate;
 
         const prevChannelItems = items.filter((item) => item.channelId === channelId);
-        const newChannelItems = parseToChannelItems(dom, { maxId, channelId });
+        const channelContent = selectChannelContent(model, { maxId, channelId, feedURL: url });
+        const { channelItems: newChannelItems } = channelContent;
         const diff = differenceBy(newChannelItems, prevChannelItems, 'title');
         if (isEmpty(diff)) {
           return;
@@ -171,7 +171,9 @@ export default () => {
         return;
       case 'idle':
         if (formAlert) { form.removeChild(formAlert); }
-        break;
+        return;
+      case 'editing':
+        return;
       default:
         console.error('Invalid addingChannelProcess state');
         break;
@@ -269,17 +271,13 @@ export default () => {
         maxId,
       } = state;
 
-      const dom = parseDOMStr(response.data, 'application/xml');
-      const channelData = parseToChannelData(dom, { maxId, feedURL });
-      const newChannelItems = parseToChannelItems(
-        dom,
-        { maxId, channelId: channelData.id },
-      );
+      const model = parse(response.data, 'application/xml');
+      const channelContent = selectChannelContent(model, { maxId, feedURL });
+      const { channelData, channelItems: newChannelItems } = channelContent;
 
       addingChannelProcess.state = 'successed';
       channels.push(channelData);
       items.push(...newChannelItems);
-      return Promise.resolve();
     })
       .then(() => delay(updateChannel, 5000, feedURL))
       .catch((error) => {
