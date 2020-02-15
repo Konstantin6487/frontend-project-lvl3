@@ -45,11 +45,12 @@
               <div class="container">
                 <h1>RSSPreview</h1>
                 <form>
+                  <p class="lead mb-0">A simple online RSS reader.</p>
                   <label for="feedUrl">
-                    <p class="lead">A simple online RSS reader.<br />Enter the URL of the RSS feed, click sync, and preview the results.</p>
+                    <span id="feedInput">Enter the URL of the RSS feed, click sync, and preview the results.</span>
                   </label>
                   <div class="input-group">
-                    <input required type="text" name="feed-url" class="form-control form-control-lg border-right-0 border-info" id="feedUrl" placeholder="RSS Feed URL" aria-describedby="emailHelp">
+                    <input required type="text" name="feed-url" class="form-control form-control-lg border-right-0 border-info" id="feedUrl" placeholder="RSS Feed URL" aria-describedby="feedInput">
                     <div class="input-group-append">
                       <button class="btn btn-primary" type="submit" id="button-submit">Sync</button>
                     </div>
