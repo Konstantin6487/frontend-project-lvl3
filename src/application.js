@@ -14,7 +14,7 @@ import {
 } from './parsers';
 import buildUrl from './utils';
 
-import httpClient from './configHttpClient';
+import httpClient from './lib/axios';
 
 export default () => {
   const state = {
@@ -173,6 +173,7 @@ export default () => {
         if (formAlert) { form.removeChild(formAlert); }
         break;
       default:
+        console.error('Invalid addingChannelProcess state');
         break;
     }
   });
