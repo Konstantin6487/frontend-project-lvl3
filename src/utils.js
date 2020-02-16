@@ -1,6 +1,3 @@
-import urljoin from 'url-join';
+const corsProxyUrl = 'https://cors-anywhere.herokuapp.com';
 
-export default (url) => {
-  const corsPrefix = 'https://cors-anywhere.herokuapp.com';
-  return urljoin(corsPrefix, url);
-};
+export default (url) => `${corsProxyUrl}/${url}`;
