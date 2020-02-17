@@ -31,6 +31,8 @@ export default () => {
     maxId: 0,
   };
 
+  view(state);
+
   const selectors = getSelectors();
 
   const { form, modal, input } = selectors;
@@ -57,8 +59,6 @@ export default () => {
       .catch(console.error)
       .finally(() => delay(updateChannel, 5000, url));
   };
-
-  view(state);
 
   input.addEventListener('focus', (e) => {
     state.addingChannelProcess.state = 'idle';

@@ -17,11 +17,13 @@ export const selectChannelContent = (model, { maxId, feedURL, channelId }) => {
     link: feedURL,
     title: channelTitle,
     description: channelDescription,
-    id: channelId || maxId + +uniqueId(),
+    id: channelId || maxId + Number(uniqueId()),
   };
 
+  const channelItemsList = model.querySelectorAll('channel > item');
+
   const channelItems = Array
-    .from(model.querySelectorAll('channel > item'))
+    .from(channelItemsList)
     .map((item) => {
       const channelItemLink = item.querySelector('link').textContent;
       const channelItemTitle = item.querySelector('title').textContent;
@@ -31,7 +33,7 @@ export const selectChannelContent = (model, { maxId, feedURL, channelId }) => {
         title: channelItemTitle,
         description: channelItemDescription,
         channelId: channelData.id,
-        id: channelData.id + uniqueId(),
+        id: channelData.id + Number(uniqueId()),
       };
       return itemData;
     });
