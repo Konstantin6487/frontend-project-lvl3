@@ -3,6 +3,7 @@ import {
   differenceBy,
   isEmpty,
 } from 'lodash-es';
+import i18n from 'i18next';
 import { isURL } from 'validator';
 import getSelectors from './selectors';
 import view from './view';
@@ -83,13 +84,15 @@ export default () => {
     }
     if (!isURL(value, { require_protocol: true })) {
       state.addingChannelProcess.validationState = 'invalid';
-      state.addingChannelProcess.errors.push('Invalid URL');
+      const errorMessage = i18n.t('validation.error.invalid_url');
+      state.addingChannelProcess.errors.push(errorMessage);
       return;
     }
     const isChannelUrlExist = channels.some(({ link }) => link === value);
     if (isChannelUrlExist) {
       state.addingChannelProcess.validationState = 'invalid';
-      state.addingChannelProcess.errors.push('This channel is already exists');
+      const errorMessage = i18n.t('validation.error.already_exists');
+      state.addingChannelProcess.errors.push(errorMessage);
       return;
     }
     state.addingChannelProcess.validationState = 'valid';
@@ -134,7 +137,7 @@ export default () => {
       .then(() => delay(updateChannel, 5000, feedURL))
       .catch((error) => {
         console.error(error);
-        const errorMessage = error.message || 'Connection error';
+        const errorMessage = error.message || i18n.t('alert.error.connection_error');
         state.addingChannelProcess.state = 'rejected';
         state.connectionErrors.push(errorMessage);
       });

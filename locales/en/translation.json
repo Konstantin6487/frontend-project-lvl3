@@ -1,0 +1,26 @@
+{
+  "template": {
+    "submit_btn": {
+      "loading": "Loading...",
+      "sync": "Sync"
+    },
+    "channel_item": {
+      "preview": "Preview"
+    }
+  },
+  "validation": {
+    "error": {
+      "invalid_url": "Invalid URL",
+      "already_exists": "This channel is already exists"
+    }
+  },
+  "alert": {
+    "error": {
+      "connection_error": "Connection error",
+      "parsing_error": "Parsing error"
+    }
+  },
+  "log": {
+    "invalid_addingchannel_process_state": "Invalid addingChannelProcess state"
+  }
+}

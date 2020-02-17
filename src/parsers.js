@@ -1,4 +1,5 @@
 import { uniqueId } from 'lodash-es';
+import i18n from 'i18next';
 
 export const parse = (data, mimeType) => {
   const parser = new DOMParser();
@@ -9,7 +10,8 @@ export const parse = (data, mimeType) => {
 export const selectChannelContent = (model, { maxId, feedURL, channelId }) => {
   const channel = model.querySelector('channel');
   if (!channel) {
-    throw new Error('Parsing error');
+    const errorMessage = i18n.t('alert.error.parsing_error');
+    throw new Error(errorMessage);
   }
   const channelTitle = model.querySelector('channel > title').textContent;
   const channelDescription = model.querySelector('channel > description').textContent;

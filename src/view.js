@@ -1,5 +1,6 @@
 import { watch } from 'melanke-watchjs';
 import { last, isEmpty, get } from 'lodash-es';
+import i18n from 'i18next';
 import getSelectors from './selectors';
 
 const selectors = getSelectors();
@@ -60,7 +61,7 @@ export default (state) => {
         channelItems.forEach((item) => {
           const li = document.createElement('li');
           li.classList.add('list-group-item', 'mb-2');
-          li.innerHTML = `<div><button type="button" class="mr-3 btn btn-info btn-sm">Preview</button><a href=${item.link} target="_blank">${item.title}</a></div>`;
+          li.innerHTML = `<div><button type="button" class="mr-3 btn btn-info btn-sm">${i18n.t('template.channel_item.preview')}</button><a href=${item.link} target="_blank">${item.title}</a></div>`;
           li.querySelector('button').addEventListener('click', () => {
             itemsUIState.viewDescriptionState = 'show';
             itemsUIState.activeItem = item.id;
@@ -79,19 +80,20 @@ export default (state) => {
     const { submitBtn } = selectors;
     const alert = document.createElement('div');
     const formAlert = form.querySelector('.alert');
+    const errorMessage = i18n.t('log.invalid_addingchannel_process_state');
 
     switch (addingChannelProcessState) {
       case 'successed':
         input.removeAttribute('disabled');
         input.value = '';
         submitBtn.innerHTML = '';
-        submitBtn.textContent = 'Sync';
+        submitBtn.textContent = `${i18n.t('template.submit_btn.sync')}`;
         return;
       case 'rejected':
         input.removeAttribute('disabled');
         input.value = '';
         submitBtn.innerHTML = '';
-        submitBtn.textContent = 'Sync';
+        submitBtn.textContent = `${i18n.t('template.submit_btn.sync')}`;
 
         alert.setAttribute('role', 'alert');
         alert.classList.add('alert', 'alert-danger');
@@ -102,7 +104,7 @@ export default (state) => {
         input.setAttribute('disabled', '');
         submitBtn.setAttribute('disabled', '');
         submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-        Loading...`;
+        ${i18n.t('template.submit_btn.loading')}`;
         return;
       case 'idle':
         if (formAlert) { form.removeChild(formAlert); }
@@ -110,7 +112,7 @@ export default (state) => {
       case 'editing':
         return;
       default:
-        console.error('Invalid addingChannelProcess state');
+        console.error(errorMessage);
         break;
     }
   };
