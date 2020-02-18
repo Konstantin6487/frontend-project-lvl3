@@ -1,10 +1,10 @@
-export default () => ({
-  sidebar: document.querySelector('#sidebar'),
-  navTabs: document.querySelector('.nav-tabs'),
-  itemsContainer: document.querySelector('.items-container > ul'),
-  form: document.querySelector('form'),
-  input: document.querySelector('#feedUrl'),
-  submitBtn: document.querySelector('#button-submit'),
-  modal: document.querySelector('#channelItemModal'),
-  feedback: document.querySelector('.feedback'),
+export default (root) => ({
+  sidebar: root.querySelector('#sidebar'),
+  navTabs: root.querySelector('.nav-tabs'),
+  itemsContainer: root.querySelector('.items-container > ul'),
+  form: root.querySelector('form'),
+  input: root.querySelector('#feedUrl'),
+  submitBtn: root.querySelector('#button-submit'),
+  modal: root.querySelector('#channelItemModal'),
+  feedback: root.querySelector('.feedback'),
 });

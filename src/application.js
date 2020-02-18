@@ -1,16 +1,15 @@
 import {
   delay,
   differenceBy,
+  get,
   isEmpty,
+  uniqueId,
 } from 'lodash-es';
 import i18n from 'i18next';
 import { isURL } from 'validator';
 import getSelectors from './selectors';
 import view from './view';
-import {
-  parse,
-  selectChannelContent,
-} from './parsers';
+import parse from './parsers';
 import buildUrl from './utils';
 
 import httpClient from './lib/axios';
@@ -19,6 +18,11 @@ export default () => {
   const state = {
     connectionErrors: [],
     addingChannelProcess: {
+      form: {
+        data: {
+          'feed-url': '',
+        },
+      },
       errors: [],
       state: 'idle', // idle | editing | processing | successed | rejected
       validationState: '', // invalid | valid
@@ -34,28 +38,64 @@ export default () => {
 
   view(state);
 
-  const selectors = getSelectors();
-
+  const selectors = getSelectors(document);
   const { form, modal, input } = selectors;
 
+  const processChannelContent = (content, { maxId, feedURL, channelId }) => {
+    const channel = content.querySelector('channel');
+    if (!channel) {
+      const errorMessage = i18n.t('alert.error.parsing_error');
+      throw new Error(errorMessage);
+    }
+    const channelTitle = content.querySelector('channel > title').textContent;
+    const channelDescription = content.querySelector('channel > description').textContent;
+    const channelData = {
+      link: feedURL,
+      title: channelTitle,
+      description: channelDescription,
+      id: channelId || maxId + Number(uniqueId()),
+    };
+
+    const channelItemsList = content.querySelectorAll('channel > item');
+
+    const channelItems = Array
+      .from(channelItemsList)
+      .map((item) => {
+        const channelItemLink = item.querySelector('link').textContent;
+        const channelItemTitle = item.querySelector('title').textContent;
+        const channelItemDescription = item.querySelector('description').textContent;
+        const itemData = {
+          link: channelItemLink,
+          title: channelItemTitle,
+          description: channelItemDescription,
+          channelId: channelData.id,
+          id: channelData.id + Number(uniqueId()),
+        };
+        return itemData;
+      });
+    return ({ channelItems, channelData });
+  };
+
   const updateChannel = (url) => {
+    const { items, maxId, channels } = state;
     const buildedUrl = buildUrl(url);
     return httpClient(buildedUrl)
       .then((response) => {
-        const { items, maxId, channels } = state;
-
-        const model = parse(response.data, 'application/xml');
+        const parsed = parse(response.data, 'application/xml');
         const channelToUpdate = channels.find((channel) => channel.link === url);
         const { id: channelId } = channelToUpdate;
 
-        const prevChannelItems = items.filter((item) => item.channelId === channelId);
-        const channelContent = selectChannelContent(model, { maxId, channelId, feedURL: url });
-        const { channelItems: newChannelItems } = channelContent;
-        const diff = differenceBy(newChannelItems, prevChannelItems, 'title');
+        const oldChannelItems = items.filter((item) => item.channelId === channelId);
+        const channelUpdatedContent = processChannelContent(
+          parsed,
+          { maxId, channelId, feedURL: url },
+        );
+        const { channelItems: updatedChannelItems } = channelUpdatedContent;
+        const diff = differenceBy(updatedChannelItems, oldChannelItems, 'title');
         if (isEmpty(diff)) {
           return;
         }
-        state.items.unshift(...diff);
+        items.unshift(...diff);
       })
       .catch(console.error)
       .finally(() => delay(updateChannel, 5000, url));
@@ -68,34 +108,38 @@ export default () => {
 
   input.addEventListener('input', (e) => {
     const { target: { value } } = e;
+    const { addingChannelProcess } = state;
     if (isEmpty(value)) {
-      state.addingChannelProcess.state = 'idle';
+      addingChannelProcess.state = 'idle';
       return;
     }
-    state.addingChannelProcess.state = 'editing';
+    addingChannelProcess.state = 'editing';
   });
 
-  input.addEventListener('input', (e) => {
-    const { channels } = state;
+  form.elements['feed-url'].addEventListener('input', (e) => {
     const { target: { value } } = e;
-    if (isEmpty(value)) {
-      state.addingChannelProcess.validationState = '';
+    const { channels, addingChannelProcess } = state;
+
+    addingChannelProcess.form.data['feed-url'] = value;
+    const formInputValue = get(addingChannelProcess, ['form', 'data', 'feed-url']);
+    if (isEmpty(formInputValue)) {
+      addingChannelProcess.validationState = '';
       return;
     }
-    if (!isURL(value, { require_protocol: true })) {
-      state.addingChannelProcess.validationState = 'invalid';
+    if (!isURL(formInputValue, { require_protocol: true })) {
+      addingChannelProcess.validationState = 'invalid';
       const errorMessage = i18n.t('validation.error.invalid_url');
-      state.addingChannelProcess.errors.push(errorMessage);
+      addingChannelProcess.errors.push(errorMessage);
       return;
     }
-    const isChannelUrlExist = channels.some(({ link }) => link === value);
+    const isChannelUrlExist = channels.some(({ link }) => link === formInputValue);
     if (isChannelUrlExist) {
-      state.addingChannelProcess.validationState = 'invalid';
+      addingChannelProcess.validationState = 'invalid';
       const errorMessage = i18n.t('validation.error.already_exists');
-      state.addingChannelProcess.errors.push(errorMessage);
+      addingChannelProcess.errors.push(errorMessage);
       return;
     }
-    state.addingChannelProcess.validationState = 'valid';
+    addingChannelProcess.validationState = 'valid';
   });
 
   modal
@@ -109,37 +153,39 @@ export default () => {
 
   form.addEventListener('submit', (e) => {
     e.preventDefault();
+    const {
+      addingChannelProcess,
+      connectionErrors,
+      items,
+      channels,
+      maxId,
+    } = state;
 
-    state.addingChannelProcess.state = 'processing';
-    state.addingChannelProcess.validationState = '';
+    addingChannelProcess.state = 'processing';
+    addingChannelProcess.validationState = '';
 
-    const formData = new FormData(e.target);
-    const feedURL = formData.get('feed-url');
+    const feedURL = get(addingChannelProcess, ['form', 'data', 'feed-url']);
 
     const buildedUrl = buildUrl(feedURL);
 
     httpClient(buildedUrl).then((response) => {
-      const {
-        addingChannelProcess,
-        items,
-        channels,
-        maxId,
-      } = state;
-
-      const model = parse(response.data, 'application/xml');
-      const channelContent = selectChannelContent(model, { maxId, feedURL });
-      const { channelData, channelItems: newChannelItems } = channelContent;
+      const parsed = parse(response.data, 'application/xml');
+      const channelUpdatedContent = processChannelContent(
+        parsed,
+        { maxId, feedURL },
+      );
+      const { channelData, channelItems: updatedChannelItems } = channelUpdatedContent;
 
       addingChannelProcess.state = 'successed';
       channels.push(channelData);
-      items.push(...newChannelItems);
+      items.push(...updatedChannelItems);
     })
       .then(() => delay(updateChannel, 5000, feedURL))
       .catch((error) => {
         console.error(error);
         const errorMessage = error.message || i18n.t('alert.error.connection_error');
-        state.addingChannelProcess.state = 'rejected';
-        state.connectionErrors.push(errorMessage);
+        addingChannelProcess.state = 'rejected';
+        connectionErrors.push(errorMessage);
       });
   });
 };

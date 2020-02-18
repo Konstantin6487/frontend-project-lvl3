@@ -3,7 +3,7 @@ import { last, isEmpty, get } from 'lodash-es';
 import i18n from 'i18next';
 import getSelectors from './selectors';
 
-const selectors = getSelectors();
+const selectors = getSelectors(document);
 
 export default (state) => {
   const handleItemsUIStateChange = () => {
@@ -30,7 +30,7 @@ export default (state) => {
     }
   };
 
-  const renderChannelList = () => {
+  const handleChannelsStateChange = () => {
     const { channels } = state;
     const { navTabs, sidebar } = selectors;
     if (isEmpty(channels)) { return; }
@@ -46,7 +46,7 @@ export default (state) => {
     });
   };
 
-  const renderChannelTape = () => {
+  const handleChannelItemsStateChange = () => {
     const { channels, items, itemsUIState } = state;
     const { itemsContainer } = selectors;
     itemsContainer.innerHTML = '';
@@ -73,7 +73,7 @@ export default (state) => {
       });
   };
 
-  const handleAddingChannelProcessState = () => {
+  const handleAddingChannelProcessStateChange = () => {
     const { connectionErrors } = state;
     const { form, input } = selectors;
     const addingChannelProcessState = get(state, ['addingChannelProcess', 'state']);
@@ -147,8 +147,8 @@ export default (state) => {
   };
 
   watch(state, 'itemsUIState', handleItemsUIStateChange);
-  watch(state, 'channels', renderChannelList);
-  watch(state, ['channels', 'items'], renderChannelTape);
-  watch(state, 'addingChannelProcess', handleAddingChannelProcessState);
+  watch(state, 'channels', handleChannelsStateChange);
+  watch(state, ['channels', 'items'], handleChannelItemsStateChange);
+  watch(state, 'addingChannelProcess', handleAddingChannelProcessStateChange);
   watch(state, 'addingChannelProcess', handleValidationStateChange);
 };
