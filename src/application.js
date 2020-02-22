@@ -1,18 +1,17 @@
 import {
   delay,
   differenceBy,
-  get,
   isEmpty,
   uniqueId,
 } from 'lodash-es';
 import i18n from 'i18next';
 import { isURL } from 'validator';
 import getSelectors from './selectors';
-import view from './view';
+import initWatchers from './view';
 import parse from './parsers';
 import buildUrl from './utils';
 
-import httpClient from './lib/axios';
+import axios from './lib/axios';
 
 export default () => {
   const state = {
@@ -36,7 +35,7 @@ export default () => {
     maxId: 0,
   };
 
-  view(state);
+  initWatchers(state);
 
   const selectors = getSelectors(document);
   const { form, modal, input } = selectors;
@@ -79,7 +78,7 @@ export default () => {
   const updateChannel = (url) => {
     const { items, maxId, channels } = state;
     const buildedUrl = buildUrl(url);
-    return httpClient(buildedUrl)
+    return axios(buildedUrl)
       .then((response) => {
         const parsed = parse(response.data, 'application/xml');
         const channelToUpdate = channels.find((channel) => channel.link === url);
@@ -121,7 +120,7 @@ export default () => {
     const { channels, addingChannelProcess } = state;
 
     addingChannelProcess.form.data['feed-url'] = value;
-    const formInputValue = get(addingChannelProcess, ['form', 'data', 'feed-url']);
+    const formInputValue = addingChannelProcess.form.data['feed-url'];
     if (isEmpty(formInputValue)) {
       addingChannelProcess.validationState = '';
       return;
@@ -164,11 +163,11 @@ export default () => {
     addingChannelProcess.state = 'processing';
     addingChannelProcess.validationState = '';
 
-    const feedURL = get(addingChannelProcess, ['form', 'data', 'feed-url']);
+    const feedURL = addingChannelProcess.form.data['feed-url'];
 
     const buildedUrl = buildUrl(feedURL);
 
-    httpClient(buildedUrl).then((response) => {
+    axios(buildedUrl).then((response) => {
       const parsed = parse(response.data, 'application/xml');
       const channelUpdatedContent = processChannelContent(
         parsed,
