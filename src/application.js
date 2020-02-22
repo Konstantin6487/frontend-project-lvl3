@@ -4,12 +4,11 @@ import {
   isEmpty,
   uniqueId,
 } from 'lodash-es';
-import i18n from 'i18next';
 import { isURL } from 'validator';
 import getSelectors from './selectors';
 import initWatchers from './view';
 import parse from './parsers';
-import buildUrl from './utils';
+import { buildUrl, validate } from './utils';
 
 import axios from './lib/axios';
 
@@ -24,7 +23,7 @@ export default () => {
       },
       errors: [],
       state: 'idle', // idle | editing | processing | successed | rejected
-      validationState: '', // invalid | valid
+      validationState: 'valid', // valid | invalid
     },
     itemsUIState: {
       viewDescriptionState: 'hide', // hide | show
@@ -43,7 +42,7 @@ export default () => {
   const processChannelContent = (content, { maxId, feedURL, channelId }) => {
     const channel = content.querySelector('channel');
     if (!channel) {
-      const errorMessage = i18n.t('alert.error.parsing_error');
+      const errorMessage = 'alert.error.parsing_error';
       throw new Error(errorMessage);
     }
     const channelTitle = content.querySelector('channel > title').textContent;
@@ -116,29 +115,32 @@ export default () => {
   });
 
   form.elements['feed-url'].addEventListener('input', (e) => {
-    const { target: { value } } = e;
+    const { target: { value: fieldValue } } = e;
     const { channels, addingChannelProcess } = state;
 
-    addingChannelProcess.form.data['feed-url'] = value;
+    addingChannelProcess.form.data['feed-url'] = fieldValue;
     const formInputValue = addingChannelProcess.form.data['feed-url'];
-    if (isEmpty(formInputValue)) {
-      addingChannelProcess.validationState = '';
-      return;
-    }
-    if (!isURL(formInputValue, { require_protocol: true })) {
+
+    const validateConstraints = [
+      {
+        check: (val) => !isEmpty(val) && !isURL(val, { require_protocol: true }),
+        message: 'validation.error.invalid_url',
+      },
+      {
+        check: (val) => !isEmpty(val) && channels.some(({ link }) => link === val),
+        message: 'validation.error.already_exists',
+      },
+    ];
+
+    const validated = validate(formInputValue, validateConstraints);
+
+    if (validated.isValid) {
+      state.addingChannelProcess.validationState = 'valid';
+    } else {
+      const { message } = validated;
       addingChannelProcess.validationState = 'invalid';
-      const errorMessage = i18n.t('validation.error.invalid_url');
-      addingChannelProcess.errors.push(errorMessage);
-      return;
+      addingChannelProcess.errors.push(message);
     }
-    const isChannelUrlExist = channels.some(({ link }) => link === formInputValue);
-    if (isChannelUrlExist) {
-      addingChannelProcess.validationState = 'invalid';
-      const errorMessage = i18n.t('validation.error.already_exists');
-      addingChannelProcess.errors.push(errorMessage);
-      return;
-    }
-    addingChannelProcess.validationState = 'valid';
   });
 
   modal
@@ -161,7 +163,7 @@ export default () => {
     } = state;
 
     addingChannelProcess.state = 'processing';
-    addingChannelProcess.validationState = '';
+    addingChannelProcess.validationState = 'valid';
 
     const feedURL = addingChannelProcess.form.data['feed-url'];
 
@@ -182,7 +184,7 @@ export default () => {
       .then(() => delay(updateChannel, 5000, feedURL))
       .catch((error) => {
         console.error(error);
-        const errorMessage = error.message || i18n.t('alert.error.connection_error');
+        const errorMessage = error.message || 'alert.error.connection_error';
         addingChannelProcess.state = 'rejected';
         connectionErrors.push(errorMessage);
       });
