@@ -27,7 +27,10 @@ export default (state) => {
       channelItemModal.modal('hide');
       channelItemModalTitle.text('');
       channelItemModalDescription.text('');
+      return;
     }
+    const errorMessage = i18n.t('log.invalid_itemsUIState_viewDescriptionState');
+    console.error(errorMessage);
   };
 
   const handleChannelsStateChange = () => {
@@ -131,20 +134,17 @@ export default (state) => {
       submitBtn.setAttribute('disabled', '');
       return;
     }
-    if (validationState === 'valid' && state.addingChannelProcess.state === 'processing') {
-      submitBtn.setAttribute('disabled', '');
-      return;
-    }
     if (validationState === 'valid') {
       feedback.className = 'feedback is-valid';
       feedback.textContent = '';
       input.classList.remove('is-invalid');
       input.classList.add('is-valid');
-      submitBtn.removeAttribute('disabled');
-    } else { submitBtn.removeAttribute('disabled'); }
-    feedback.className = 'feedback';
-    feedback.innerHTML = '';
-    input.classList.remove('is-valid', 'is-invalid');
+      if (state.addingChannelProcess.state === 'processing') {
+        submitBtn.setAttribute('disabled', '');
+      } else { submitBtn.removeAttribute('disabled'); }
+    }
+    const errorMessage = i18n.t('log.invalid_addingChannelProcess_validationState');
+    console.error(errorMessage);
   };
 
   watch(state, 'itemsUIState', handleItemsUIStateChange);
