@@ -97,7 +97,7 @@ export default (state) => {
 
         alert.setAttribute('role', 'alert');
         alert.classList.add('alert', 'alert-danger');
-        alert.textContent = last(connectionErrors);
+        alert.textContent = i18n.t(last(connectionErrors));
         form.appendChild(alert);
         return;
       case 'processing':
@@ -124,9 +124,14 @@ export default (state) => {
     const { feedback, submitBtn } = selectors;
     if (validationState === 'invalid') {
       feedback.className = 'feedback invalid-feedback font-weight-bold';
-      feedback.textContent = last(errors);
+      const error = last(errors);
+      feedback.textContent = i18n.t(error);
       input.classList.remove('is-valid');
       input.classList.add('is-invalid');
+      submitBtn.setAttribute('disabled', '');
+      return;
+    }
+    if (validationState === 'valid' && state.addingChannelProcess.state === 'processing') {
       submitBtn.setAttribute('disabled', '');
       return;
     }
@@ -136,10 +141,6 @@ export default (state) => {
       input.classList.remove('is-invalid');
       input.classList.add('is-valid');
       submitBtn.removeAttribute('disabled');
-      return;
-    }
-    if (validationState === '' && state.addingChannelProcess.state === 'processing') {
-      submitBtn.setAttribute('disabled', '');
     } else { submitBtn.removeAttribute('disabled'); }
     feedback.className = 'feedback';
     feedback.innerHTML = '';
