@@ -142,6 +142,7 @@ export default (state) => {
       if (state.addingChannelProcess.state === 'processing') {
         submitBtn.setAttribute('disabled', '');
       } else { submitBtn.removeAttribute('disabled'); }
+      return;
     }
     const errorMessage = i18n.t('log.invalid_addingChannelProcess_validationState');
     console.error(errorMessage);
