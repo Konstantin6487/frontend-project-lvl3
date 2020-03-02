@@ -6,7 +6,7 @@ import {
 import { isURL } from 'validator';
 import getSelectors from './selectors';
 import initWatchers from './view';
-import parse from './parsers';
+import parseRSS from './parsers';
 import { buildUrl, validate } from './utils';
 
 import axios from './lib/axios';
@@ -47,7 +47,7 @@ export default () => {
         const { id: channelId } = channelToUpdate;
 
         const oldChannelItems = items.filter((item) => item.channelId === channelId);
-        const parsed = parse(response.data, { maxId, channelId, feedURL: url });
+        const parsed = parseRSS(response.data, { maxId, channelId, feedURL: url });
         const { channelItems: updatedChannelItems } = parsed;
         const diff = differenceBy(updatedChannelItems, oldChannelItems, 'title');
         if (isEmpty(diff)) {
@@ -130,7 +130,7 @@ export default () => {
     const buildedUrl = buildUrl(feedURL);
 
     axios(buildedUrl).then((response) => {
-      const parsed = parse(response.data, { maxId, feedURL });
+      const parsed = parseRSS(response.data, { maxId, feedURL });
       const { channelData, channelItems: updatedChannelItems } = parsed;
 
       addingChannelProcess.state = 'successed';
