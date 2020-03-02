@@ -29,10 +29,7 @@ export default (state) => {
       channelItemModalDescription.text('');
       return;
     }
-    const errorMessage = i18n.t(
-      'log.unknown_itemsUIState_viewDescriptionState',
-      { state: viewDescriptionState },
-    );
+    const errorMessage = i18n.t('log.unknown_itemsUIState_viewDescriptionState', { state: viewDescriptionState });
     throw new Error(errorMessage);
   };
 
@@ -149,10 +146,7 @@ export default (state) => {
       } else { submitBtn.removeAttribute('disabled'); }
       return;
     }
-    const errorMessage = i18n.t(
-      'log.unknown_addingChannelProcess_validationState',
-      { state: validationState },
-    );
+    const errorMessage = i18n.t('log.unknown_addingChannelProcess_validationState', { state: validationState });
     throw new Error(errorMessage);
   };
 
