@@ -29,8 +29,11 @@ export default (state) => {
       channelItemModalDescription.text('');
       return;
     }
-    const errorMessage = i18n.t('log.invalid_itemsUIState_viewDescriptionState');
-    console.error(errorMessage);
+    const errorMessage = i18n.t(
+      'log.unknown_itemsUIState_viewDescriptionState',
+      { state: viewDescriptionState },
+    );
+    throw new Error(errorMessage);
   };
 
   const handleChannelsStateChange = () => {
@@ -83,7 +86,10 @@ export default (state) => {
     const { submitBtn } = selectors;
     const alert = document.createElement('div');
     const formAlert = form.querySelector('.alert');
-    const errorMessage = i18n.t('log.invalid_addingchannel_process_state');
+    const errorMessage = i18n.t(
+      'log.unknown_addingchannel_process_state',
+      { state: addingChannelProcessState },
+    );
 
     switch (addingChannelProcessState) {
       case 'successed':
@@ -115,8 +121,7 @@ export default (state) => {
       case 'editing':
         return;
       default:
-        console.error(errorMessage);
-        break;
+        throw new Error(errorMessage);
     }
   };
 
@@ -144,13 +149,30 @@ export default (state) => {
       } else { submitBtn.removeAttribute('disabled'); }
       return;
     }
-    const errorMessage = i18n.t('log.invalid_addingChannelProcess_validationState');
-    console.error(errorMessage);
+    const errorMessage = i18n.t(
+      'log.unknown_addingChannelProcess_validationState',
+      { state: validationState },
+    );
+    throw new Error(errorMessage);
   };
 
-  watch(state, 'itemsUIState', handleItemsUIStateChange);
-  watch(state, 'channels', handleChannelsStateChange);
-  watch(state, ['channels', 'items'], handleChannelItemsStateChange);
-  watch(state, 'addingChannelProcess', handleAddingChannelProcessStateChange);
-  watch(state, 'addingChannelProcess', handleValidationStateChange);
+  watch(state, 'itemsUIState', () => {
+    try { handleItemsUIStateChange(); } catch (e) { console.error(e); }
+  });
+
+  watch(state, 'channels', () => {
+    try { handleChannelsStateChange(); } catch (e) { console.error(e); }
+  });
+
+  watch(state, ['channels', 'items'], () => {
+    try { handleChannelItemsStateChange(); } catch (e) { console.error(e); }
+  });
+
+  watch(state, 'addingChannelProcess', () => {
+    try { handleAddingChannelProcessStateChange(); } catch (e) { console.error(e); }
+  });
+
+  watch(state, 'addingChannelProcess', () => {
+    try { handleValidationStateChange(); } catch (e) { console.error(e); }
+  });
 };

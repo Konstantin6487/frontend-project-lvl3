@@ -21,8 +21,8 @@
     }
   },
   "log": {
-    "invalid_addingchannel_process_state": "Invalid addingChannelProcess state",
-    "invalid_itemsUIState_viewDescriptionState": "Invalid itemsUIState viewDescriptionState",
-    "invalid_addingChannelProcess_validationState": "Invalid addingChannelProcess validationState"
+    "unknown_addingchannel_process_state": "Unknown adding channel process state: {{state}}!",
+    "unknown_itemsUIState_viewDescriptionState": "Unknown itemsUIState view description state: {{state}}!",
+    "unknown_addingChannelProcess_validationState": "Unknown adding channel process validation state: {{state}}!"
   }
 }
