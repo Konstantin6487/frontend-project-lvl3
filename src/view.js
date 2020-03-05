@@ -3,9 +3,8 @@ import { last, isEmpty, get } from 'lodash-es';
 import i18n from 'i18next';
 import getSelectors from './selectors';
 
-const selectors = getSelectors(document);
-
 export default (state) => {
+  const selectors = getSelectors(document);
   const handleItemsUIStateChange = () => {
     const { items } = state;
     const channelItemModal = jquery('#channelItemModal');
@@ -93,13 +92,13 @@ export default (state) => {
         input.removeAttribute('disabled');
         input.value = '';
         submitBtn.innerHTML = '';
-        submitBtn.textContent = `${i18n.t('template.submit_btn.sync')}`;
+        submitBtn.textContent = i18n.t('template.submit_btn.sync');
         return;
       case 'rejected':
         input.removeAttribute('disabled');
         input.value = '';
         submitBtn.innerHTML = '';
-        submitBtn.textContent = `${i18n.t('template.submit_btn.sync')}`;
+        submitBtn.textContent = i18n.t('template.submit_btn.sync');
 
         alert.setAttribute('role', 'alert');
         alert.classList.add('alert', 'alert-danger');
@@ -150,23 +149,9 @@ export default (state) => {
     throw new Error(errorMessage);
   };
 
-  watch(state, 'itemsUIState', () => {
-    try { handleItemsUIStateChange(); } catch (e) { console.error(e); }
-  });
-
-  watch(state, 'channels', () => {
-    try { handleChannelsStateChange(); } catch (e) { console.error(e); }
-  });
-
-  watch(state, ['channels', 'items'], () => {
-    try { handleChannelItemsStateChange(); } catch (e) { console.error(e); }
-  });
-
-  watch(state, 'addingChannelProcess', () => {
-    try { handleAddingChannelProcessStateChange(); } catch (e) { console.error(e); }
-  });
-
-  watch(state, 'addingChannelProcess', () => {
-    try { handleValidationStateChange(); } catch (e) { console.error(e); }
-  });
+  watch(state, 'itemsUIState', handleItemsUIStateChange);
+  watch(state, 'channels', handleChannelsStateChange);
+  watch(state, ['channels', 'items'], handleChannelItemsStateChange);
+  watch(state, 'addingChannelProcess', handleAddingChannelProcessStateChange);
+  watch(state, 'addingChannelProcess', handleValidationStateChange);
 };

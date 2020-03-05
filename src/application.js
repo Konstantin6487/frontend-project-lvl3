@@ -126,13 +126,13 @@ export default () => {
     addingChannelProcess.validationState = 'valid';
 
     const feedURL = addingChannelProcess.form.data['feed-url'];
-
     const buildedUrl = buildUrl(feedURL);
 
     axios(buildedUrl).then((response) => {
       const parsed = parseRSS(response.data, { maxId, feedURL });
       const { channelData, channelItems: updatedChannelItems } = parsed;
 
+      addingChannelProcess.form.data['feed-url'] = '';
       addingChannelProcess.state = 'successed';
       channels.push(channelData);
       items.push(...updatedChannelItems);
