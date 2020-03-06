@@ -2,6 +2,7 @@ import {
   delay,
   differenceBy,
   isEmpty,
+  uniqueId,
 } from 'lodash-es';
 import { isURL } from 'validator';
 import getSelectors from './selectors';
@@ -30,7 +31,6 @@ export default () => {
     },
     channels: [],
     items: [],
-    maxId: 0,
   };
 
   initWatchers(state);
@@ -39,21 +39,25 @@ export default () => {
   const { form, modal, input } = selectors;
 
   const updateChannel = (url) => {
-    const { items, maxId, channels } = state;
-    const buildedUrl = buildUrl(url);
-    return axios(buildedUrl)
+    const { items, channels } = state;
+    return axios(url)
       .then((response) => {
-        const channelToUpdate = channels.find((channel) => channel.link === url);
-        const { id: channelId } = channelToUpdate;
+        const parsed = parseRSS(response.data);
+        const { channelData, channelItems: updatedChannelItems } = parsed;
 
+        const channelToUpdate = channels.find((channel) => channel.title === channelData.title);
+        const { id: channelId } = channelToUpdate;
         const oldChannelItems = items.filter((item) => item.channelId === channelId);
-        const parsed = parseRSS(response.data, { maxId, channelId, feedURL: url });
-        const { channelItems: updatedChannelItems } = parsed;
+
         const diff = differenceBy(updatedChannelItems, oldChannelItems, 'title');
         if (isEmpty(diff)) {
           return;
         }
-        items.unshift(...diff);
+        const identifiedDiff = diff.map((item) => {
+          const itemId = Number(uniqueId());
+          return ({ ...item, channelId, id: itemId });
+        });
+        items.unshift(...identifiedDiff);
       })
       .catch(console.error)
       .finally(() => delay(updateChannel, 5000, url));
@@ -119,7 +123,6 @@ export default () => {
       connectionErrors,
       items,
       channels,
-      maxId,
     } = state;
 
     addingChannelProcess.state = 'processing';
@@ -129,15 +132,22 @@ export default () => {
     const buildedUrl = buildUrl(feedURL);
 
     axios(buildedUrl).then((response) => {
-      const parsed = parseRSS(response.data, { maxId, feedURL });
+      const parsed = parseRSS(response.data);
       const { channelData, channelItems: updatedChannelItems } = parsed;
+
+      const channelId = Number(uniqueId());
+      channelData.id = channelId;
+      const identifiedUpdatedChannelItems = updatedChannelItems.map((item) => {
+        const itemId = Number(uniqueId());
+        return ({ ...item, channelId, id: itemId });
+      });
 
       addingChannelProcess.form.data['feed-url'] = '';
       addingChannelProcess.state = 'successed';
       channels.push(channelData);
-      items.push(...updatedChannelItems);
+      items.push(...identifiedUpdatedChannelItems);
     })
-      .then(() => delay(updateChannel, 5000, feedURL))
+      .then(() => delay(updateChannel, 5000, buildedUrl))
       .catch((error) => {
         console.error(error);
         const errorMessage = error.message || 'alert.error.connection_error';

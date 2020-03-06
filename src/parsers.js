@@ -1,21 +1,19 @@
-import { uniqueId } from 'lodash-es';
-
-export default (data, { maxId, feedURL, channelId }) => {
+export default (rss) => {
   const instance = new DOMParser();
-  const content = instance.parseFromString(data, 'application/xml');
+  const content = instance.parseFromString(rss, 'application/xml');
 
   const channel = content.querySelector('channel');
   if (!channel) {
     const errorMessage = 'alert.error.parsing_error';
     throw new Error(errorMessage);
   }
+  const channelLink = content.querySelector('channel > link').textContent;
   const channelTitle = content.querySelector('channel > title').textContent;
   const channelDescription = content.querySelector('channel > description').textContent;
   const channelData = {
-    link: feedURL,
+    link: channelLink,
     title: channelTitle,
     description: channelDescription,
-    id: channelId || maxId + Number(uniqueId()),
   };
 
   const channelItemsList = content.querySelectorAll('channel > item');
@@ -30,8 +28,6 @@ export default (data, { maxId, feedURL, channelId }) => {
         link: channelItemLink,
         title: channelItemTitle,
         description: channelItemDescription,
-        channelId: channelData.id,
-        id: channelData.id + Number(uniqueId()),
       };
       return itemData;
     });
