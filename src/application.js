@@ -38,26 +38,24 @@ export default () => {
   const selectors = getSelectors(document);
   const { form, modal, input } = selectors;
 
+  const identifyChannelItems = (channelItems, channelId) => channelItems
+    .map((item) => ({ ...item, channelId, id: Number(uniqueId()) }));
+
   const updateChannel = (url) => {
     const { items, channels } = state;
     return axios(url)
       .then((response) => {
         const parsed = parseRSS(response.data);
-        const { channelData, channelItems: updatedChannelItems } = parsed;
+        const { channelData, channelItems: channelUpdatedItems } = parsed;
 
         const channelToUpdate = channels.find((channel) => channel.title === channelData.title);
-        const { id: channelId } = channelToUpdate;
-        const oldChannelItems = items.filter((item) => item.channelId === channelId);
-
-        const diff = differenceBy(updatedChannelItems, oldChannelItems, 'title');
-        if (isEmpty(diff)) {
+        const channelOldItems = items.filter((item) => item.channelId === channelToUpdate.id);
+        const channelNewItems = differenceBy(channelUpdatedItems, channelOldItems, 'title');
+        if (isEmpty(channelNewItems)) {
           return;
         }
-        const identifiedDiff = diff.map((item) => {
-          const itemId = Number(uniqueId());
-          return ({ ...item, channelId, id: itemId });
-        });
-        items.unshift(...identifiedDiff);
+        const identifiedChannelNewItems = identifyChannelItems(channelNewItems, channelToUpdate.id);
+        items.unshift(...identifiedChannelNewItems);
       })
       .catch(console.error)
       .finally(() => delay(updateChannel, 5000, url));
@@ -91,11 +89,10 @@ export default () => {
         message: 'validation.error.invalid_url',
       },
       {
-        check: (val) => !isEmpty(val) && channels.some(({ link }) => link === val),
+        check: (val) => !isEmpty(val) && channels.some(({ feedURL }) => val === feedURL),
         message: 'validation.error.already_exists',
       },
     ];
-
     const validated = validate(formInputValue, validateConstraints);
 
     if (validated.isValid) {
@@ -133,19 +130,19 @@ export default () => {
 
     axios(buildedUrl).then((response) => {
       const parsed = parseRSS(response.data);
-      const { channelData, channelItems: updatedChannelItems } = parsed;
+      const { channelData, channelItems: channelUpdatedItems } = parsed;
 
-      const channelId = Number(uniqueId());
-      channelData.id = channelId;
-      const identifiedUpdatedChannelItems = updatedChannelItems.map((item) => {
-        const itemId = Number(uniqueId());
-        return ({ ...item, channelId, id: itemId });
-      });
+      channelData.id = Number(uniqueId());
+      channelData.feedURL = feedURL;
+      const identifiedChannelUpdatedItems = identifyChannelItems(
+        channelUpdatedItems,
+        channelData.id,
+      );
 
       addingChannelProcess.form.data['feed-url'] = '';
       addingChannelProcess.state = 'successed';
       channels.push(channelData);
-      items.push(...identifiedUpdatedChannelItems);
+      items.push(...identifiedChannelUpdatedItems);
     })
       .then(() => delay(updateChannel, 5000, buildedUrl))
       .catch((error) => {
