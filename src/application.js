@@ -134,6 +134,7 @@ export default () => {
 
       channelData.id = Number(uniqueId());
       channelData.feedURL = feedURL;
+
       const identifiedChannelUpdatedItems = identifyChannelItems(
         channelUpdatedItems,
         channelData.id,
