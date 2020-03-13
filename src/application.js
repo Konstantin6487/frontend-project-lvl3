@@ -1,5 +1,4 @@
 import {
-  delay,
   differenceBy,
   isEmpty,
   uniqueId,
@@ -57,8 +56,7 @@ export default () => {
         const identifiedChannelNewItems = identifyChannelItems(channelNewItems, channelToUpdate.id);
         items.unshift(...identifiedChannelNewItems);
       })
-      .catch(console.error)
-      .finally(() => delay(updateChannel, 5000, url));
+      .finally(() => setTimeout(updateChannel, 5000, url));
   };
 
   input.addEventListener('focus', (e) => {
@@ -145,9 +143,8 @@ export default () => {
       channels.push(channelData);
       items.push(...identifiedChannelUpdatedItems);
     })
-      .then(() => delay(updateChannel, 5000, buildedUrl))
+      .then(() => setTimeout(updateChannel, 5000, buildedUrl))
       .catch((error) => {
-        console.error(error);
         const errorMessage = error.message || 'alert.error.connection_error';
         addingChannelProcess.state = 'rejected';
         connectionErrors.push(errorMessage);
